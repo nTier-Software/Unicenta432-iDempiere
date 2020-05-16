@@ -1,0 +1,251 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import com.openbravo.pos.forms.DataLogicSales; 
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.payment.PaymentInfo;
+import java.math.*;
+import java.util.Properties;
+import com.openbravo.data.loader.*;
+import java.awt.Font; 
+import javax.swing.plaf.FontUIResource; 
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+import com.ghintech.fiscalprint.DataLogicFiscal;
+import java.lang.String;
+import java.lang.Object;
+import java.util.concurrent.TimeUnit;
+import com.ghintech.fiscalprint.Hasar;
+import com.ghintech.fiscalprint.HandlerSpooler;
+import com.openbravo.format.Formats;
+
+
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+DataLogicFiscal logicfiscal = new DataLogicFiscal();
+logicfiscal.init(session);
+Integer found = 1;
+File file=null;
+File fileStatus=null;
+File file2=null;
+File file3=null;
+Properties propsdb = logicsystem.getResourceAsProperties(logicfiscal.getHostName() + "/properties");
+Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+String invoiceFolder = propsdb.getProperty("invoiceFolder");
+String spoolerFolder = propsdb.getProperty("spoolerFolder");
+String logRoute = propsdb.getProperty("logRoute");
+String PathTmp = propsdb.getProperty("PathTmp");
+String showChangeInScreen = p.getProperty("showChangeInScreen");
+String lockTicketPrecheck = p.getProperty("lockTicketPrecheck");
+String portNumber = propsdb.getProperty("portNumber");
+String serial = propsdb.getProperty("serialNumber");
+String vendor = propsdb.getProperty("vendor");
+String auxname="CONTADO";
+String auxaddress="Panama";
+String auxtaxid="000-000-000";
+String prefix="j";
+Hasar objHasar =new Hasar();
+boolean StatusExist=false;
+int count = 0;
+long timeout = 500;
+boolean updated = false;
+
+
+
+if(vendor.compareTo("hasar")==0){
+    try{
+    
+        int speed = 9600;
+        String spoolerName = "wspooler.exe";
+        String nroVoucher = null;
+        String codPrinter = null;
+        String dateVoucher = null;
+        String timeVoucher = null;
+        StringBuilder soRefNo = new StringBuilder();
+        String auxname="CONTADO";
+        String auxaddress="Panama";
+        String auxtaxid="";
+        int top = 0;
+        File fileStatus=null;
+        HandlerSpooler hsp = new HandlerSpooler(portNumber,speed,spoolerFolder.concat(spoolerName),logRoute,PathTmp,"", //null for windows sh for linux
+                                                serial,28);
+
+System.out.println("Ejecutado");
+if(ticket.printCustomer()!=null){
+            if(ticket.printCustomer().trim().compareTo("")!=0){
+                auxname=ticket.printCustomer().replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'");
+            }
+        }
+hsp.OpenNonFiscalDocument();
+hsp.PrintNonFiscalText("Cliente:");
+hsp.PrintNonFiscalText(auxname);
+hsp.PrintNonFiscalText("Monto Abonado:");
+hsp.PrintNonFiscalText(ticket.printTotalPaid());
+hsp.PrintNonFiscalText("Total Abonado:");
+hsp.PrintNonFiscalText("--");
+hsp.PrintNonFiscalText("Concepto:");
+hsp.PrintNonFiscalText(ticket.getTicketNotes());
+hsp.PrintNonFiscalText("Tiene 3 meses para cancelar");
+hsp.PrintNonFiscalText("Desde la fecha del primer abono");
+hsp.CloseNonFiscalReceipt();
+return 1;
+        soRefNo.append("*" + "Ticket: " + ":").append(ticket.getTicketId()).append("*");
+        soRefNo.append(" ");
+        top = (soRefNo.toString().length() -1 >= 0? soRefNo.toString().length() -1: 0);        
+        if(top > 45)
+                top = 45;
+        //Print TicketNo
+        hsp.printTextHeader(soRefNo.toString().substring(0, top));
+        if(ticket.printCustomer()!=null){
+                if(ticket.printCustomer().trim().compareTo("")!=0){
+                  auxname=ticket.printCustomer().replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'");
+                }
+                if(ticket.getCustomer().getTaxid() != null){
+                        if(ticket.getCustomer().getTaxid().trim().compareTo("")!=0){
+                                auxtaxid=ticket.getCustomer().getTaxid().trim();
+                        }
+                }
+        }
+        //Print Customer Name
+        if(ticket.getTicketType()==0){
+                hsp.printHeader(auxname, auxtaxid, nroVoucher, codPrinter, dateVoucher, timeVoucher, "A");
+        }
+        else if(ticket.getTicketType()==1){
+                hsp.printHeader(auxname, auxtaxid, nroVoucher, codPrinter, dateVoucher, timeVoucher, "D");
+        }
+        //Print Location
+        if(ticket.getCustomer().getAddress()!=null){
+                if(ticket.getCustomer().getAddress().trim().compareTo("")!=0){
+                        auxaddress=ticket.getCustomer().getAddress().trim();
+                }
+        }                    
+        StringBuilder nameLoc = new StringBuilder();
+        nameLoc.append(auxaddress);
+        top = (nameLoc.toString().length() -1 >= 0? nameLoc.toString().length() -1: 0);
+        if(top > 41)
+                top = 41;
+        //Print Location 
+        hsp.printMessage("Direccion" + ":" + nameLoc.toString().substring(0, top));
+
+        //Print Lines
+        int length=ticket.getLinesCount();
+        String aux=null;
+        NumberFormat f = NumberFormat.getInstance(Locale.ENGLISH);
+        f.setMinimumFractionDigits(1);
+        if (f instanceof DecimalFormat) {
+                ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+        }
+        ProductInfoExt product = null;    
+        Double totalLines=0.0;                    
+        for (int i = 0; i < length; i++) {
+                int pstrlength=40;
+                line = ticket.getLine(i);                         
+                String nameItem = null;
+                String valueItem = null;
+                if(line.getProductID()!=null){
+                        product = logicfiscal.getProductInfo(line.getProductID());
+                        nameItem=line.printName();
+                        valueItem=product.getReference();
+                        if(nameItem.length()<=pstrlength){
+                                pstrlength=nameItem.length();			
+                        }
+                        nameItem=nameItem.substring(0,pstrlength);                        
+                }
+
+                hsp.printLine(nameItem, 
+                                        (f.format(Math.abs(line.getMultiply())).replace(",","")), 
+                                        (f.format(line.getPrice()).replace(",","")), 
+                                        (f.format(line.getTaxRate()*100)), 
+                                        null, 
+                                        valueItem);
+        }
+
+        //FORMAS DE PAGO
+        Iterator i = ticket.getPayments().iterator();
+        Double montoefectivo=0.0;
+        Double totalPayment=0.0;   
+        BigDecimal bd =null; 
+        while (i.hasNext()){
+                PaymentInfo paymentline = (PaymentInfo)i.next();
+                aux=f.format(paymentline.getTotal());
+                if (paymentline.getName().compareTo("cash")==0){
+                        if(paymentline.getChange()<=10000000.0){
+                                            bd = new BigDecimal(paymentline.getTotal()+paymentline.getChange());
+                                            aux=f.format(bd.doubleValue());
+                                            hsp.printPaymentForm("Efectivo", aux, 1);
+                        }
+                }else if (paymentline.getName().compareTo("magcard")==0){
+                                hsp.printPaymentForm("Tarjeta", aux, 2);
+                        }
+        }
+        //FIN FORMAS DE PAGO
+        hsp.printCommand("E");
+        hsp.printCommand(String.valueOf((char)123));
+        HandlerSpooler hsp2 = new HandlerSpooler(portNumber,speed,spoolerFolder.concat(spoolerName),spoolerFolder.concat("glog.txt"),PathTmp,"", //null for windows sh for linux
+                                                serial,28);
+        hsp2.get_Status();
+        boolean StatusErrorExist=false;
+        int ans=0;
+        while(!StatusErrorExist && ans<20){
+                fileStatus = new File(spoolerFolder.concat("glog.txt"));
+                StatusErrorExist=fileStatus.exists();
+                TimeUnit.SECONDS.sleep(1);
+                ans++;
+        }
+        //use filereader to extract fiscal info and insert in ticket
+        if(StatusErrorExist){
+                System.out.println("ENTRE A TRATAR DE GUARDAR");
+                updated = logicfiscal.updateTicketFiscalHasar2(ticket,fileStatus);
+        }
+        if(ans==10){
+                JOptionPane.showMessageDialog(null, 
+                        "Ocurrio un problema actualizando la informacion fiscal", "POS", JOptionPane.PLAIN_MESSAGE);   
+                        return found;         
+        }
+    }catch(Exception e){
+        e.printStackTrace();
+    }
+}
+    if(showChangeInScreen.compareTo("Y")==0){ 
+        if(ticket.getTicketType()==0){
+            boolean isCash = false;
+            String change = "";
+            PaymentInfo p = ticket.payments.getFirst();
+            if ("cash".equals(p.getName())) {
+                isCash = true;
+                change = p.printChange();
+            }
+
+            // Get details of the original font before we change it otherwise all dialogboxes will use new settings
+            JOptionPane pane = new JOptionPane();
+            Font originalFont=pane.getFont();
+
+            UIManager.put("OptionPane.buttonFont", new FontUIResource(new Font("ARIAL",Font.PLAIN,20)));
+            message = "Cambio: " + change;
+            JLabel FontText = new JLabel(message);
+            FontText.setFont (new Font ( "Arial", Font.BOLD, 36) );
+
+            if(isCash) {
+                 JOptionPane pane = new JOptionPane();
+                 pane.setMessage(FontText);
+                 pane.setPreferredSize( new Dimension(450,150));
+                 JDialog dialog = pane.createDialog("Pago en efectivo");
+                new Thread(new Runnable() {
+                     void run() {
+                        dialog.show();
+                    } 
+                }).start();
+            }
+
+            // Return to default settings
+            UIManager.put("OptionPane.buttonFont", new FontUIResource(new Font(originalFont.getName(),originalFont.getStyle(),originalFont.getSize())));
+        }
+    }

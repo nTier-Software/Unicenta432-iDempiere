@@ -1,0 +1,65 @@
+//    uniCenta oPOS - touch friendly EPoS
+//    Copyright (c) 2009-2015 uniCenta & previous Openbravo POS works
+//    http://www.unicenta.net
+//
+//    This file is part of uniCenta oPOS
+//
+//    uniCenta oPOS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    uniCenta oPOS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with uniCenta oPOS.  If not, see <http://www.gnu.org/licenses/>.
+
+report = new com.openbravo.pos.reports.PanelReportBean();
+
+report.setTitleKey("Menu.SalesByUser");
+report.setReport("/com/openbravo/reports/salesbyuser");
+report.setResourceBundle("com/openbravo/reports/salesbyuser_message");
+
+report.setSentence("SELECT " +
+		"PEOPLE.NAME,TICKETS.TICKETTYPE, " +
+		"SUM(TICKETLINES.UNITS) AS QTY, " +
+		"SUM(TICKETLINES.PRICE * TICKETLINES.UNITS) AS CATPRICE, " +
+		"SUM((TICKETLINES.PRICE * TAXES.RATE ) * TICKETLINES.UNITS) AS CATTAX, " +
+		"SUM((TICKETLINES.PRICE + TICKETLINES.PRICE * TAXES.RATE ) * TICKETLINES.UNITS) AS CATTOTAL, " +
+		"CASE WHEN TICKETS.TICKETTYPE = 0 THEN COUNT(DISTINCT TICKETLINES.TICKET) ELSE (-1)*COUNT(DISTINCT TICKETLINES.TICKET) END AS TICKETSNO " +
+		"FROM CLOSEDCASH, TAXES, TICKETLINES " +
+		"LEFT OUTER JOIN PRODUCTS ON TICKETLINES.PRODUCT = PRODUCTS.ID " +
+		"LEFT OUTER JOIN PRODUCTS_CAT ON PRODUCTS_CAT.PRODUCT = PRODUCTS.ID " +
+		"LEFT OUTER JOIN CATEGORIES ON PRODUCTS.CATEGORY = CATEGORIES.ID " +
+		"LEFT OUTER JOIN TICKETS ON TICKETS.ID = TICKETLINES.TICKET " +
+		"LEFT OUTER JOIN RECEIPTS ON RECEIPTS.ID = TICKETS.ID " +
+		"LEFT OUTER JOIN PEOPLE ON PEOPLE.ID = TICKETS.PERSON " +
+		"WHERE CLOSEDCASH.MONEY = RECEIPTS.MONEY " +
+		"AND TICKETLINES.TAXID = TAXES.ID " +
+		"AND ?(QBF_FILTER) " +
+		"GROUP BY  PEOPLE.NAME,TICKETS.TICKETTYPE " +
+		"ORDER BY PEOPLE.NAME,TICKETS.TICKETTYPE ASC");
+
+report.addParameter("RECEIPTS.DATENEW");
+report.addParameter("RECEIPTS.DATENEW");
+
+paramdates = new com.openbravo.pos.reports.JParamsDatesInterval();
+
+paramdates.setStartDate(com.openbravo.beans.DateUtils.getToday());
+// JG - 8 Jan 14 paramdates.setEndDate(com.openbravo.beans.DateUtils.getToday());
+paramdates.setEndDate(com.openbravo.beans.DateUtils.getTodayMinutes());
+
+report.addQBFFilter(paramdates);
+
+report.addField("NAME", com.openbravo.data.loader.Datas.STRING);
+report.addField("TICKETTYPE", com.openbravo.data.loader.Datas.DOUBLE);
+report.addField("QTY", com.openbravo.data.loader.Datas.DOUBLE);
+report.addField("CATPRICE", com.openbravo.data.loader.Datas.DOUBLE);
+report.addField("CATTAX", com.openbravo.data.loader.Datas.DOUBLE);
+report.addField("CATTOTAL", com.openbravo.data.loader.Datas.DOUBLE);
+report.addField("TICKETSNO", com.openbravo.data.loader.Datas.DOUBLE);
+
+report;

@@ -1,0 +1,155 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import com.ghintech.fiscalprint.DataLogicFiscal;
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.ticket.ProductInfoExt; 
+import com.openbravo.data.loader.Session;
+import com.openbravo.pos.ticket.TicketLineInfo;
+import java.math.*;
+import java.util.Properties;
+import com.openbravo.pos.payment.PaymentInfo;
+import com.openbravo.pos.ticket.TicketInfo;
+import com.sun.jna.Native;
+import com.ghintech.fiscalprint.bematech.*;
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicFiscal logicFiscal = new DataLogicFiscal();
+logicFiscal.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+Properties propsdb = logicsystem.getResourceAsProperties(logicfiscal.getHostName() + "/properties");
+//Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+
+BemaFI print = (BemaFI) Native.loadLibrary(propsdb.getProperty("library"),BemaFI.class);
+int iRetorno=1;
+File file=null;
+File fileStatus=null;
+    //TICKET NO FISCAL
+    //verificamos si la factura ya ha sido impresa imprimimos un comprobante no fiscal
+    String fNumber = logicFiscal.findCuponNo(ticket.getTicketId(),ticket.getTicketType());          
+    if(fNumber != null){
+        iRetorno = print.Bematech_FI_ImpressaoFitaDetalhe("2",fNumber,fNumber,"1");
+        return null;
+    }
+    //END TICKET NO FISCAL
+
+String auxname="CONTADO";
+String auxaddress="Panama";
+String auxtaxid="000-000-000";
+System.out.println("Tipo de ticket");
+System.out.println(ticket.getTicketType());
+System.out.println(ticket.printDate());
+//return 1;
+int taxidlength=11;
+if(ticket.getCustomer()!=null){
+        if(ticket.printCustomer()!=null){
+            if(ticket.printCustomer().trim().compareTo("")!=0){
+                auxname=ticket.printCustomer().replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'");
+            }
+        }    
+        if(ticket.getCustomer().getAddress()!=null){
+            if(ticket.getCustomer().getAddress().trim().compareTo("")!=0){
+                auxaddress=ticket.getCustomer().getAddress().trim();
+
+            }
+        }
+        if(ticket.getCustomer().printTaxid()!=null){
+            if(ticket.getCustomer().printTaxid().trim().compareTo("")!=0){
+                auxtaxid=ticket.getCustomer().printTaxid().trim();
+
+            }
+        }
+if(auxtaxid.length()<=taxidlength){
+                taxidlength=auxtaxid.length();
+        }
+        auxtaxid=auxtaxid.substring(0,taxidlength);
+}
+        if(ticket.getTicketType()==0){
+            
+            iRetorno = print.Bematech_FI_AbreFacturaFis("2",auxtaxid,auxname,auxaddress,"");
+            iRetorno = print.Bematech_FI_AbreComprobanteDeVentaEx(auxtaxid,auxname,auxaddress);
+            
+        }else {
+            System.out.println("entro aqui nota de credito");
+            //return 1;
+            //iRetorno = print.Bematech_FI_Abre_Nota_Cred_Fis("3",  ticket.printId(), auxtaxid , auxname , "");
+            iRetorno = print.Bematech_FI_AbreNotaDeCredito(auxname,ticket.printId(),auxtaxid,ticket.printDate().substring(3,5), ticket.printDate().substring(0,2), ticket.printDate().substring(8,10), ticket.printDate().substring(11,13),ticket.printDate().substring(14,16),ticket.printDate().substring(17,19),"00" ,ticket.printId());
+//iRetorno = print.Bematech_FI_AbreNotaDeCredito(auxname,ticket.printId(),auxtaxid,"21", "12", "15", "05", "08", "02", "00", ticket.printId());
+
+        }
+        if (iRetorno!=1){
+            System.out.println(iRetorno);
+//            iRetorno=print.Bematech_FI_AnulaCupon();
+            return 1;
+        }
+        length=ticket.getLinesCount();
+        String aux=null;
+        Double totalLines=0;
+        NumberFormat f = NumberFormat.getInstance(Locale.ENGLISH);
+        if (f instanceof DecimalFormat) {
+              ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+        }
+        DecimalFormat fo = new DecimalFormat("#0.00");
+        int pstrlength=25;
+
+        for (int i = 0; i < length; i++) {
+            line = ticket.getLine(i);
+            product = logicFiscal.getProductInfo(line.getProductID());
+            
+            desc=line.printName();
+            if(desc.length()<=pstrlength){
+              pstrlength=desc.length();			
+            }
+            desc=desc.substring(0,pstrlength);
+            String tax="FF";
+            System.out.println(line.getTaxRate());
+                        if (line.getTaxRate()==0.07){
+            System.out.println("impuesto de 7 %");
+                            tax="01";
+                        }else if (line.getTaxRate()==0.1){
+            System.out.println("impuesto de 10 %");
+                            tax="02";
+                        }else if (line.getTaxRate()==0.15){
+            System.out.println("impuesto de 15 %");
+                             tax="03";
+                        }else{
+            System.out.println("impuesto exento");
+                             tax="FF";
+                        }
+            
+                iRetorno=print.Bematech_FI_VendeArticulo(product.getReference(),desc,tax,"I",fo.format(line.getMultiply()).replace(".00",""),2,fo.format(line.getPrice()).replace(".",","),"%","0000");
+            
+            totalLines+=line.getPrice()*Math.abs(line.getMultiply())*(1+line.getTaxRate());
+            if (iRetorno!=1){
+               System.out.println(iRetorno);
+               iRetorno=print.Bematech_FI_AnulaCupon();
+               return 1;
+            } 
+        }
+
+
+iRetorno=print.Bematech_FI_CierraCuponReducido("Efectivo","No se aceptan devoluciones de productos cosmeticos / No refunds of cosmetics products. Vuelva Pronto");
+            System.out.println("-----------Finalizar cupon");
+            System.out.println(iRetorno);
+        if (iRetorno!=1){
+            return 1;
+        }
+
+String invoiceFolder = propsdb.getProperty("invoiceFolder");
+File file = new File(invoiceFolder + "BemaFI32.log");
+file.delete();
+BemaFI print = (BemaFI) Native.loadLibrary(propsdb.getProperty("library"),BemaFI.class);
+int iRetorno=1;
+String nro = "      ";
+iRetorno = print.Bematech_FI_NumeroComprobanteFiscal(nro);
+iRetorno = print.Bematech_FI_NumeroCupon(nro);
+
+//use filereader to extract fiscal info and insert in ticket
+if(!logicFiscal.updateTicketFiscalBematech(ticket,file)){
+    JOptionPane.showMessageDialog(null, 
+    "Ocurrio un problema actualizando la informacion fiscal", "POS", JOptionPane.PLAIN_MESSAGE);   
+    return found;         
+}

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 6.5.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ticketsample" pageWidth="595" pageHeight="842" whenNoDataType="NoPages" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" uuid="06e46a7c-3101-49d2-b71b-740857088edb">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["./"]]></defaultValueExpression>
+	</parameter>
+	<field name="TICKET" class="com.openbravo.pos.ticket.TicketInfo"/>
+	<field name="PLACE" class="java.lang.String"/>
+	<field name="TAXESLOGIC" class="java.lang.Object"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="85" splitType="Stretch">
+			<image scaleImage="RetainShape">
+				<reportElement key="image-1" x="134" y="0" width="276" height="83" uuid="dc8e9a10-9b75-4d3f-92ec-e9884458d2fb"/>
+				<imageExpression><![CDATA["logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="253" splitType="Stretch">
+			<rectangle>
+				<reportElement key="rectangle-3" x="10" y="169" width="517" height="81" uuid="770c8062-794f-438c-ba9a-977d9e43f164"/>
+			</rectangle>
+			<rectangle>
+				<reportElement key="rectangle-2" x="300" y="7" width="227" height="77" uuid="80ff9e6f-9846-40d1-b39c-47a1797a3625"/>
+			</rectangle>
+			<rectangle>
+				<reportElement key="rectangle-1" x="10" y="7" width="290" height="77" uuid="8ca2203f-9b1a-4b5f-a388-057a89dc2d4e"/>
+			</rectangle>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-2" x="128" y="11" width="156" height="21" uuid="254c7817-2078-45da-bfd4-74a912b61ce9"/>
+				<textFieldExpression><![CDATA[$F{TICKET}.printId()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-3" x="19" y="11" width="109" height="21" uuid="f70d43cc-3e50-4c3a-af9b-313e4f231efc"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Receipt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-4" x="19" y="32" width="109" height="21" uuid="ce4e9460-a395-4968-b992-402b51f177d8"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-3" x="128" y="32" width="156" height="21" uuid="368fa407-0310-4a33-84d5-f78f1561dc66"/>
+				<textFieldExpression><![CDATA[$F{TICKET}.printDate()]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-1" x="128" y="53" width="156" height="20" uuid="401ad1bc-19ac-434e-8ef4-6f3dda27ed40"/>
+				<textFieldExpression><![CDATA[$F{PLACE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-5" x="19" y="53" width="109" height="21" uuid="5fa52a3c-66b0-4498-9c8c-37bffd420925"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Table]]></text>
+			</staticText>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-4" x="310" y="11" width="202" height="19" uuid="ff6a430f-d1a6-4c00-ad5c-f0ca25c930b1">
+					<printWhenExpression><![CDATA[Boolean.valueOf($F{TICKET}.getCustomer() != null)]]></printWhenExpression>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{TICKET}.getCustomer().getName()]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-5" x="310" y="32" width="202" height="19" uuid="80711eeb-d053-4d22-8b58-5e076f90e69b">
+					<printWhenExpression><![CDATA[Boolean.valueOf($F{TICKET}.getCustomer() != null)]]></printWhenExpression>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{TICKET}.getCustomer().getTaxid()]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-6" x="324" y="199" width="188" height="19" uuid="2893e1c7-79dc-40a2-84ef-603bc5650e38"/>
+				<textElement textAlignment="Right">
+					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TICKET}.printTax()]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-7" x="324" y="218" width="188" height="19" uuid="f3fe1db3-6a31-40c6-8dcb-008f536aa78f"/>
+				<textElement textAlignment="Right">
+					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TICKET}.printTotal()]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-8" x="324" y="180" width="188" height="19" uuid="6b9e812c-1ee3-49b6-ae16-1b44d7b5149c"/>
+				<textElement textAlignment="Right">
+					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TICKET}.printSubTotal()]]></textFieldExpression>
+			</textField>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-1" x="10" y="91" width="517" height="65" uuid="598fbe5b-f9f3-487a-9c79-5db0165ea69d"/>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource(
+$F{TICKET}.getLines()
+)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[JasperCompileManager.compileReport(
+net.sf.jasperreports.engine.xml.JRXmlLoader.load(getClass().getResourceAsStream(
+"/com/openbravo/reports/ticketsample_lines_2.jrxml"
+))
+)]]></subreportExpression>
+			</subreport>
+			<staticText>
+				<reportElement key="staticText-6" x="164" y="180" width="160" height="19" uuid="6938c303-fb81-426a-9f29-4cb845635d18"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Subtotal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-8" x="164" y="199" width="160" height="19" uuid="4f8c321a-8066-4ccd-8a63-638439594ab6"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Taxes]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-9" x="164" y="218" width="160" height="19" uuid="3608e4aa-9df9-4709-aafe-ab020405a0b6"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="128" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="0" width="517" height="20" uuid="d1cacc66-7b92-420a-99fb-54aa57ac7b08"/>
+				<text><![CDATA[Cotización valida por 15 dias]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="9" y="20" width="517" height="20" uuid="25d0910c-c479-4731-ba21-f72169ad655e"/>
+				<text><![CDATA[1.- Favor confeccionar cheque a nombre de Smart Center]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="9" y="41" width="517" height="20" uuid="561982c1-2ed6-4116-8a3b-c2a257bb7271"/>
+				<text><![CDATA[2.- Debe ser cheque cerrtificado o de gerencia]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="9" y="61" width="517" height="20" uuid="66bdfc89-4614-4b2d-a011-d954b10afc00"/>
+				<text><![CDATA[3.- Cada cheque devuelto tendrá un recargo de 40.00 + ITBMS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="9" y="81" width="517" height="20" uuid="7a956f6f-c8a1-4423-9e15-c85aa4ad70b3"/>
+				<text><![CDATA[4.- Los precios de la cotizacion estan sujetos a cambio sin previo aviso]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="9" y="101" width="517" height="20" uuid="6fec58ec-fb7a-4997-8bb5-0063fedf0f69"/>
+				<text><![CDATA[5.- Mercancia en remate y oferta no se mantienen con el precio en promocion]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

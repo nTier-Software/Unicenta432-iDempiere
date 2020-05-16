@@ -1,0 +1,69 @@
+//    uniCenta oPOS  - Touch Friendly Point Of Sale
+//    Copyright (c) 2009-2015 uniCenta & previous Openbravo POS works
+//    http://www.unicenta.com
+//
+//    This file is part of uniCenta oPOS
+//
+//    uniCenta oPOS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//   uniCenta oPOS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with uniCenta oPOS.  If not, see <http://www.gnu.org/licenses/>
+
+report = new com.openbravo.pos.reports.PanelReportBean();
+
+report.setTitleKey("Menu.ExtendedCashRegisterLogByPayments");
+report.setReport("/com/ghintech/reports/extendedcashregisterlogbypayments");
+report.setResourceBundle("com/ghintech/reports/extendedcashregisterlogbypayments_messages");
+
+report.setSentence("SELECT " +
+        "TICKETS.FISCALNUMBER AS TICKET_NO, " +
+        "to_char(RECEIPTS.DATENEW, 'dd-mm-yyyy') AS TICKET_DATE, " +
+        "to_char(RECEIPTS.DATENEW,'HH24:mi') AS TICKET_TIME, " +
+        "PEOPLE.NAME AS PERSON, " +
+        "PAYMENTS.PAYMENT, " +
+        "PAYMENTS.TOTAL AS MONEY, " +
+        "CUSTOMERS.NAME CUSTOMERNAME, " +
+        "CUSTOMERS.SEARCHKEY CUSTOMERVALUE, " +
+        "SUM( case when PRODUCTS.isscale is false then TICKETLINES.UNITS else 1 end) TICKETUNITS " +
+    "FROM ((TICKETS TICKETS " +
+        "LEFT OUTER JOIN PEOPLE PEOPLE ON (TICKETS.PERSON = PEOPLE.ID)) " +
+        "RIGHT OUTER JOIN RECEIPTS RECEIPTS ON (RECEIPTS.ID = TICKETS.ID)) " +
+        "LEFT OUTER JOIN PAYMENTS PAYMENTS ON (RECEIPTS.ID = PAYMENTS.RECEIPT) " +
+        "LEFT OUTER JOIN CUSTOMERS ON (CUSTOMERS.ID = TICKETS.CUSTOMER) " +
+        "LEFT OUTER JOIN TICKETLINES ON (TICKETLINES.TICKET = TICKETS.ID) " +
+        "LEFT OUTER JOIN TAXLINES ON (TAXLINES.RECEIPT = RECEIPTS.ID) " +
+        "LEFT OUTER JOIN PRODUCTS ON (TICKETLINES.PRODUCT = PRODUCTS.ID) " +
+    "WHERE ?(QBF_FILTER) " +
+        "GROUP BY TICKETS.TICKETID,TICKETS.FISCALNUMBER,RECEIPTS.DATENEW,PEOPLE.NAME,PAYMENTS.PAYMENT,PAYMENTS.NOTES,PAYMENTS.TOTAL,PAYMENTS.TENDERED,CUSTOMERS.NAME,CUSTOMERS.SEARCHKEY "+
+        "ORDER BY PAYMENTS.PAYMENT,RECEIPTS.DATENEW");
+
+report.addParameter("RECEIPTS.DATENEW");
+report.addParameter("RECEIPTS.DATENEW");
+
+paramdates = new com.openbravo.pos.reports.JParamsDatesInterval();
+
+paramdates.setStartDate(com.openbravo.beans.DateUtils.getToday());
+// JG - 8 Jan 14 paramdates.setEndDate(com.openbravo.beans.DateUtils.getToday());
+paramdates.setEndDate(com.openbravo.beans.DateUtils.getTodayMinutes());
+
+report.addQBFFilter(paramdates);
+
+report.addField("TICKET_NO", com.openbravo.data.loader.Datas.STRING);
+report.addField("TICKET_DATE", com.openbravo.data.loader.Datas.STRING);
+report.addField("TICKET_TIME", com.openbravo.data.loader.Datas.STRING);
+report.addField("PERSON", com.openbravo.data.loader.Datas.STRING);
+report.addField("PAYMENT", com.openbravo.data.loader.Datas.STRING);
+report.addField("MONEY", com.openbravo.data.loader.Datas.DOUBLE);
+report.addField("CUSTOMERNAME", com.openbravo.data.loader.Datas.STRING);
+report.addField("CUSTOMERVALUE", com.openbravo.data.loader.Datas.STRING);
+report.addField("TICKETUNITS", com.openbravo.data.loader.Datas.DOUBLE);
+
+return report;

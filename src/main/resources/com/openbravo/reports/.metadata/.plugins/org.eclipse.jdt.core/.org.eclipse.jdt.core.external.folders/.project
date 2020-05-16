@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>.org.eclipse.jdt.core.external.folders</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>.link0</name>
+			<type>2</type>
+			<location>/home/egil/NetBeansProjects/Unicenta432-pa/unicentaopos432-pa/src/main/java/com/openbravo/pos/ticket</location>
+		</link>
+	</linkedResources>
+</projectDescription>

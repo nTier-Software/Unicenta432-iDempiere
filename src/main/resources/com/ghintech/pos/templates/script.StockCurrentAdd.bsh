@@ -1,0 +1,77 @@
+// script.StockCurrentAdd
+// This script checks Stock Level for a sale item
+//
+//    uniCenta oPOS - Touch Friendly Point Of Sale
+//    Copyright (c) 2009-2015 uniCenta
+//    http://sourceforge.net/projects/unicentaopos
+//
+//    This file is part of uniCenta oPOS.
+//
+//    uniCenta oPOS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    uniCenta oPOS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with uniCenta oPOS.  If not, see <http://www.gnu.org/licenses/>.
+// **************************************************************************
+ 
+import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.data.loader.Session;
+import java.util.Properties;
+ 
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+String checkInventoryOnAdd = p.getProperty("checkInventoryOnAdd");
+p = logicsystem.getResourceAsProperties(hostname + "/properties");
+String loc = p.getProperty("location");
+product = line.getProductID();
+units = logicsale.findProductStock(loc,product,null);
+multiply = 0;
+if(checkInventoryOnAdd.compareTo("Y")==0){ 
+    if (line.isProductService() != true) {
+        for (int i= 0; i < ticket.getLinesCount(); i++) {
+            row = ticket.getLine(i);
+            String prodid = product;
+            String getprodid = row.getProductID().toString();
+            if (prodid.equals(getprodid)) {
+                multiply = multiply + row.getMultiply();
+            }
+        }
+        diff = units - line.getMultiply() - multiply;
+        if (diff < 0.0) {
+            javax.swing.JOptionPane.showMessageDialog(null, "No hay suficiente inventario en la ubicacion " + loc , "Inventario", JOptionPane.WARNING_MESSAGE);
+            return "Cancel";
+        } 
+    }
+}
+
+giftcard = false;
+for (int i= 0; i < ticket.getLinesCount(); i++) {
+        row = ticket.getLine(i);
+        System.out.println(row.isProductVprice());
+        if(row.isProductVprice() == true) {
+             giftcard = true;
+        }
+}
+System.out.println(giftcard);
+
+if ((line.isProductVprice() == false && giftcard == true) || (ticket.getLinesCount() > 1 && line.isProductVprice() == true)) {
+    javax.swing.JOptionPane.showMessageDialog(null, "No puede vender tarjetas de regalo con otros productos", "Verificacion de Tarjetas de Regalo", JOptionPane.WARNING_MESSAGE);
+    return "Cancel";
+}
+
+if (line.isProductVprice() == true && line.getPrice() < 25.0) {
+    javax.swing.JOptionPane.showMessageDialog(null, "El monto de la tarjeta de regalo debe ser mayor a 25", "Verificación de Tarjetas de Regalo", JOptionPane.WARNING_MESSAGE);
+    return "Cancel";
+}

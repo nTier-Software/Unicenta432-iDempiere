@@ -1,0 +1,180 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import com.openbravo.format.Formats;
+import com.openbravo.pos.forms.DataLogicSales; 
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.erp.sync.DataLogicIntegration;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.payment.PaymentInfo;
+import com.ghintech.fiscalprint.DataLogicFiscal;
+import java.math.*;
+import java.util.Properties;
+import com.openbravo.data.loader.*;
+import java.awt.Font; 
+import javax.swing.plaf.FontUIResource; 
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+DataLogicIntegration logicintegration = new DataLogicIntegration();
+logicintegration.init(session);
+DataLogicFiscal logicfiscal = new DataLogicFiscal();
+logicfiscal.init(session);
+
+//Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+Properties propsdb = logicsystem.getResourceAsProperties(logicfiscal.getHostName() + "/properties");
+String invoiceFolder = propsdb.getProperty("invoiceFolder");
+
+Integer found = 1;
+File file=null;
+File file2=null;
+File fileStatus=null;
+
+String auxname="CONTADO";
+String auxaddress="Panama";
+String prefix="800";
+
+try{
+    //eliminamos el status anterior si existe	
+    fileStatus = new File(invoiceFolder + "Status_Error.txt");    
+    if(fileStatus.exists()){
+        fileStatus.delete();
+    }
+    
+    boolean checkprinter=false;
+    //generamos el estatus de informacion para leer la informacin fiscal y ejecutamos el proceso
+    fileProcess=new File(invoiceFolder + "IntTFHKA.exe");
+    if(fileProcess.exists()){
+        String filePath2 = invoiceFolder + "IntTFHKA.exe CheckFprinter()";
+        Process p1 = Runtime.getRuntime().exec(filePath2);
+        p1.waitFor();
+        //usamos filereader para extraer la informacion e insertarla en el ticket
+        fileStatus = new File(invoiceFolder + "Status_Error.txt");    
+        if(fileStatus.exists()){
+            // creates a FileReader Object
+            FileReader reader = new FileReader(fileStatus);
+            BufferedReader br = new BufferedReader(reader); 
+            String status; 
+            while((status = br.readLine()) != null) { 
+                if(status.substring(0,4).compareTo("TRUE")==0){
+                    checkprinter=true;
+                }
+            } 
+            reader.close(); 
+        }
+    }
+    if(!checkprinter){
+        JOptionPane.showMessageDialog(null,"No Existe Impresora Conectada o Esta Apagada", "POS", JOptionPane.PLAIN_MESSAGE);
+        return found;         
+    }
+    //eliminamos el status anterior si existe	
+    fileStatus = new File(invoiceFolder + "Status_Error.txt");    
+    if(fileStatus.exists()){
+        fileStatus.delete();
+    }
+    file = new File(invoiceFolder + "factura.txt");    
+    if(file.exists())
+        file.delete();
+    
+    file.createNewFile();
+    
+    //create file for precheck
+    file2 = new File(invoiceFolder + "/Eliminadas/" + ticket.getId() + ".txt"); 
+    if(file2.exists())
+        file2.delete();
+    
+    file2.createNewFile();
+    // creates a FileWriter Object
+    FileWriter writer = new FileWriter(file);
+    FileWriter writer2 = new FileWriter(file2);
+    //formateamos la caracteres especiales
+    if(ticket.printCustomer()!=null){
+        if(ticket.printCustomer().trim().compareTo("")!=0){
+            auxname=ticket.printCustomer().replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'");
+        }
+    }
+    //formateamos para que la descripcion del cliente no pase de 40 caracteres
+    int cstrlength=39;
+    int cstrlength2=79;
+    int cstrlength3=119;
+    int cstrlength4=159;
+    if(auxname.length()<=cstrlength){
+        cstrlength=auxname.length();			
+    }
+    String tableDetails = logicfiscal.getTableDetails(ticket.getId());
+    writer.write(prefix+"***** MESA: " + tableDetails + " *****\n");
+    writer.write(prefix+"Nombre: " + auxname.substring(0,cstrlength) + "\n");
+
+    writer2.write(prefix+"***** MESA: " + tableDetails + " *****\n");
+    writer2.write("Nombre: " + auxname.substring(0,cstrlength) + "\n");
+    if((auxname.length())>cstrlength){
+        writer.write(prefix+"        " + auxname.substring(cstrlength,((auxname.length()>cstrlength2)?cstrlength2:auxname.length())) + "\n");
+        writer2.write("        " + auxname.substring(cstrlength,((auxname.length()>cstrlength2)?cstrlength2:auxname.length())) + "\n");
+    }	
+    if((auxname.length())>cstrlength2){
+        writer.write(prefix+"        " + auxname.substring(cstrlength2,((auxname.length()>cstrlength3)?cstrlength3:auxname.length())) + "\n");
+        writer2.write("        " + auxname.substring(cstrlength2,((auxname.length()>cstrlength3)?cstrlength3:auxname.length())) + "\n");
+    }
+    if((auxname.length())>cstrlength3){
+        writer.write(prefix+"        " + auxname.substring(cstrlength3,((auxname.length()>cstrlength4)?cstrlength4:auxname.length())) + "\n");
+        writer2.write("        " + auxname.substring(cstrlength3,((auxname.length()>cstrlength4)?cstrlength4:auxname.length())) + "\n");
+    }
+    
+    length=ticket.getLinesCount();
+    String aux=null;
+    String desc=null;
+    Double totalLines=0;
+    for (int i = 0; i < length; i++) {
+        int pstrlength=40;
+        line = ticket.getLine(i);
+        desc=line.printName();
+        if(desc.length()<=pstrlength){
+            pstrlength=desc.length();			
+        }
+	desc=desc.substring(0,pstrlength);
+        writer.write(prefix+line.getMultiply()+"   " +desc +"   "+line.printPrice()+"\n");
+        writer2.write(line.getMultiply()+"   " +desc +"   "+line.printPrice()+"\n");
+    }
+    writer.write(prefix+"Subtotal: "+ticket.printSubTotal()+"\n");
+    writer.write(prefix+"Impuesto: "+Formats.CURRENCY.formatValue(ticket.getTax())+"\n");
+    writer.write(prefix+"Total: "+ticket.printTotal()+"\n");
+    writer.write(prefix+"================================\n");
+    writer2.write("Subtotal: "+ticket.printSubTotal()+"\n");
+    writer2.write("Impuesto: "+Formats.CURRENCY.formatValue(ticket.getTax())+"\n");
+    writer2.write("Total: "+ticket.printTotal()+"\n");
+    writer2.write("================================\n");
+    subtotal = ticket.getSubTotal();
+    double tip =0.0; 
+    if (subtotal > 0.0) { 
+         tip = subtotal*0.10;
+    }
+    writer.write(prefix+"Propina Sugerida 10%: "+Formats.CURRENCY.formatValue(tip)+"\n");
+    writer.write(prefix+"Subtotal: "+ Formats.CURRENCY.formatValue(ticket.getSubTotal()+tip)+"\n");
+    writer.write(prefix+"Impuesto: "+Formats.CURRENCY.formatValue(ticket.getTax())+"\n");
+    writer.write(prefix+"Total: "+Formats.CURRENCY.formatValue(ticket.getTotal()+tip)+"\n");
+    writer.write("810");
+    writer.flush();
+    writer.close();
+    writer2.write("Propina Sugerida 10%: "+Formats.CURRENCY.formatValue(tip)+"\n");
+    writer2.write("Subtotal: "+ Formats.CURRENCY.formatValue(ticket.getSubTotal()+tip)+"\n");
+    writer2.write("Impuesto: "+Formats.CURRENCY.formatValue(ticket.getTax())+"\n");
+    writer2.write("Total: "+Formats.CURRENCY.formatValue(ticket.getTotal()+tip)+"\n");
+    writer2.write("\n\n");
+    writer2.flush();
+    writer2.close();
+    String filePath = invoiceFolder + "IntTFHKA.exe SendFileCmd(" + invoiceFolder + "factura.txt)";
+    Process p = Runtime.getRuntime().exec(filePath);
+    p.waitFor();
+
+}catch(Exception e){
+    e.printStackTrace();
+}
+

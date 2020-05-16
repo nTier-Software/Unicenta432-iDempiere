@@ -1,0 +1,41 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import com.openbravo.pos.forms.DataLogicSales; 
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.ghintech.fiscalprint.DataLogicFiscal;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.payment.PaymentInfo;
+import java.math.*;
+import java.util.Properties;
+import com.openbravo.data.loader.*;
+import java.awt.Font; 
+import javax.swing.plaf.FontUIResource; 
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+DataLogicFiscal logicfiscal = new DataLogicFiscal();
+logicfiscal.init(session);
+Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+String invoiceFolder = p.getProperty("invoiceFolder");
+String lockTicketPrecheck = p.getProperty("lockTicketPrecheck");
+
+Integer found = 1;
+File file2=null;
+if(lockTicketPrecheck.compareTo("Y")==0){ 
+
+    try{    
+        file2 = new File(invoiceFolder+ "/Eliminadas/" + ticket.getId() + ".txt"); 
+        if(file2.exists()){
+            JOptionPane.showMessageDialog(null,"No puede eliminar el ticket porque ya se a impreso una precuenta", "POS", JOptionPane.PLAIN_MESSAGE);   
+            return 1;
+        }
+    }catch(Exception e){
+        e.printStackTrace();
+    }
+}

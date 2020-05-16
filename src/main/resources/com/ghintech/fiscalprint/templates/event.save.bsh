@@ -1,0 +1,133 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import com.openbravo.pos.forms.DataLogicSales; 
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.ghintech.fiscalprint.DataLogicFiscal;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.payment.PaymentInfo;
+import com.openbravo.pos.ticket.TicketInfo; 
+import com.openbravo.pos.ticket.TicketLineInfo;
+import java.math.*;
+import java.util.Properties;
+import com.openbravo.data.loader.*;
+import java.awt.Font; 
+import javax.swing.plaf.FontUIResource; 
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+import com.ghintech.fiscalprint.Hasar;
+import java.util.concurrent.TimeUnit;
+import com.sun.jna.Native;
+import com.ghintech.fiscalprint.bematech.*;
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+DataLogicFiscal logicfiscal = new DataLogicFiscal();
+logicfiscal.init(session);
+Integer found = 1;
+File file=null;
+File fileStatus=null;
+Properties propsdb = logicsystem.getResourceAsProperties(logicfiscal.getHostName() + "/properties");
+//Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+String vendor = propsdb.getProperty("vendor");
+String auxname="CONTADO";
+String auxaddress="Panama";
+String prefix="j";
+boolean checkprinter=false;
+String invoiceFolder = propsdb.getProperty("invoiceFolder");
+String spoolerFolder = propsdb.getProperty("spoolerFolder");
+String portNumber = propsdb.getProperty("portNumber");
+boolean StatusExist=false;
+int count = 0;
+try{
+    if(vendor.compareTo("thefactory") == 0){
+        //eliminamos el status anterior si existe	
+        fileStatus = new File("C:/IntTFHKA/Status_Error.txt");    
+        if(fileStatus.exists()){
+            fileStatus.delete();
+        }
+        file = new File("C:/IntTFHKA/factura.txt");    
+        if(file.exists()){
+            file.delete();
+        }
+        //generamos el estatus de informacion para leer la informacin fiscal y ejecutamos el proceso
+	fileProcess=new File("C:/IntTFHKA/IntTFHKA.exe");
+	if(fileProcess.exists()){
+            String filePath2 = "C:/IntTFHKA/IntTFHKA.exe CheckFprinter()";
+            Process p1 = Runtime.getRuntime().exec(filePath2);
+            p1.waitFor();
+            //usamos filereader para extraer la informacion e insertarla en el ticket
+            fileStatus = new File("C:/IntTFHKA/Status_Error.txt");    
+
+            if(fileStatus.exists()){
+                // creates a FileReader Object
+                FileReader reader = new FileReader(fileStatus);
+                BufferedReader br = new BufferedReader(reader); 
+                String status; 
+                while((status = br.readLine()) != null) { 
+                    if(status.substring(0,4).compareTo("TRUE")==0){
+                        checkprinter=true;
+                    }
+                } 
+                reader.close(); 
+            }
+	}
+    }
+    else if(vendor.compareTo("bematech") == 0){
+        BemaFI print = (BemaFI) Native.loadLibrary(propsdb.getProperty("library"),BemaFI.class);
+        int iRetorno=0;
+        iRetorno = print.Bematech_FI_VerificaImpresoraPrendida();
+        System.out.println("Estado de la Impresora = "+iRetorno);
+        if(iRetorno==1){
+            checkprinter=true;
+        }
+
+    }
+    else if(vendor.compareTo("hasar") == 0){
+        //Start Spooler
+        String filePath = spoolerFolder + "wspooler.exe -"+ portNumber+ " -z -s " + invoiceFolder ;
+        Process p = Runtime.getRuntime().exec(filePath);  
+        Hasar objHasar =new Hasar();
+        // Delete Folder Files
+        objHasar.emptyInvoiceFolder(invoiceFolder);		
+        // Delete old status file
+        fileStatus = new File(invoiceFolder + "Status.txt");    
+        if(fileStatus.exists()){
+            fileStatus.delete();
+        }
+        // Create new status file
+        fileStatus.createNewFile();
+        // creates a FileWriter Object
+        FileWriter writer = new FileWriter(fileStatus);
+        // Set Status Command
+        writer.append('f').append(objHasar.LF);
+        writer.flush();
+        writer.close();
+        //Check Status
+        while(!StatusExist && count < 10){
+            fileStatus = new File(invoiceFolder + "Status.ans");
+            StatusExist=fileStatus.exists();
+            //p.waitFor(1,TimeUnit.SECONDS)
+           TimeUnit.SECONDS.sleep(1);
+            count++;
+        }
+        //Set error if no respond
+        if (count != 5){
+            checkprinter=true;
+        }
+    }
+    if(!checkprinter){
+	Runtime.getRuntime().exec("taskkill /F /IM wspooler.exe");
+        JOptionPane.showMessageDialog(null,"No Existe Impresora Conectada o Esta Apagada", "POS", JOptionPane.PLAIN_MESSAGE);   
+        return found;         
+    }
+
+}catch(Exception e){
+    e.printStackTrace();
+}

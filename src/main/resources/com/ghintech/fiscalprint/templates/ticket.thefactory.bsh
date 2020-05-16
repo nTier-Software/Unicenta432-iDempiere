@@ -1,0 +1,419 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import com.openbravo.pos.forms.DataLogicSales; 
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.payment.PaymentInfo;
+import java.math.*;
+import java.util.Properties;
+import com.openbravo.data.loader.*;
+import java.awt.Font; 
+import javax.swing.plaf.FontUIResource; 
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+import com.ghintech.fiscalprint.DataLogicFiscal;
+import java.lang.String;
+import java.util.concurrent.TimeUnit;
+import com.openbravo.format.Formats;
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+DataLogicFiscal logicfiscal = new DataLogicFiscal();
+logicfiscal.init(session);
+Integer found = 1;
+File file=null;
+File fileStatus=null;
+File file2=null;
+Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+Properties propsdb = logicsystem.getResourceAsProperties(logicfiscal.getHostName() + "/properties");
+String invoiceFolder = propsdb.getProperty("invoiceFolder");
+String showChangeInScreen = p.getProperty("showChangeInScreen");
+String lockTicketPrecheck = p.getProperty("lockTicketPrecheck");
+
+String auxname="CONTADO";
+String auxaddress="Panama";
+String auxtaxid="000-000-000";
+String prefix="j";
+try{
+    //eliminamos el status anterior si existe	
+    fileStatus = new File(invoiceFolder + "Status_Error.txt");    
+    if(fileStatus.exists()){
+        fileStatus.delete();
+    }
+    file = new File(invoiceFolder + "factura.txt");    
+    if(file.exists()){
+        file.delete();
+    }
+    
+    file.createNewFile();
+    // creates a FileWriter Object
+    FileWriter writer = new FileWriter(file);
+        
+    //verificamos si la factura ya ha sido impresa imprimimos un comprobante no fiscal
+    String fNumber = logicfiscal.findFiscalNumber(ticket.getTicketId(),ticket.getTicketType());
+    System.out.println(ticket.getTicketId());
+    if(fNumber != null){
+        String cmd = "SendCmd(R";
+        System.out.println(cmd);
+        System.out.println(ticket.getTicketType());
+        System.out.println(fNumber);
+        if(ticket.getTicketType()==0){
+            cmd +="F";
+        }else{
+            cmd +="C";
+        }
+        cmd += fNumber.substring((fNumber.length()-7),fNumber.length());
+        cmd += fNumber.substring((fNumber.length()-7),fNumber.length());
+        cmd +=")";
+        String filePath2 = invoiceFolder + "IntTFHKA.exe " + cmd;
+        System.out.println(filePath2);
+        Process p1 = Runtime.getRuntime().exec(filePath2);
+        p1.waitFor();
+        if(!logicfiscal.updateTicketFiscalCopyTheFactory(ticket,fNumber)){
+            JOptionPane.showMessageDialog(null, 
+                "Ocurrio un problema actualizando la informacion fiscal", "POS", JOptionPane.PLAIN_MESSAGE);   
+            return found;         
+        }
+        return null;
+    }
+    //formateamos la caracteres especiales
+    if(ticket.printCustomer()!=null){
+        if(ticket.printCustomer().trim().compareTo("")!=0){
+            auxname=ticket.printCustomer().replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'");
+        }
+    }
+    //formateamos para que la descripcion del cliente no pase de 40 caracteres
+    int cstrlength=39;
+    int cstrlength2=79;
+    int cstrlength3=119;
+    int cstrlength4=159;
+    if(auxname.length()<=cstrlength){
+        cstrlength=auxname.length();			
+    }
+    if(ticket.getCustomer()!=null){
+        if(ticket.getCustomer().getTaxid() != null){
+            if(ticket.getCustomer().getTaxid().trim().compareTo("")!=0){
+                auxtaxid=ticket.getCustomer().getTaxid().trim();
+            }
+        }
+    }
+giftcard = false;
+ for (int i= 0; i < ticket.getLinesCount(); i++) {
+        row = ticket.getLine(i);
+        System.out.println(row.isProductVprice());
+        if(row.isProductVprice() == true){
+             giftcard = true;
+        }
+}
+System.out.println(giftcard);
+if (giftcard == true) {
+prefix="800";
+    if(ticket.getTicketType()==0){
+        writer.write(prefix+"Nombre: " + auxname.substring(0,cstrlength) + "\n");
+        if((auxname.length())>cstrlength){
+            writer.write(prefix+"        " + auxname.substring(cstrlength,((auxname.length()>cstrlength2)?cstrlength2:auxname.length())) + "\n");
+        }	
+        if((auxname.length())>cstrlength2){
+            writer.write(prefix+"        " + auxname.substring(cstrlength2,((auxname.length()>cstrlength3)?cstrlength3:auxname.length())) + "\n");
+        }
+        if((auxname.length())>cstrlength3){
+            writer.write(prefix+"        " + auxname.substring(cstrlength3,((auxname.length()>cstrlength4)?cstrlength4:auxname.length())) + "\n");
+        }
+        
+        writer.write(prefix+"C.I/RUC: " + auxtaxid + "\n");
+	}
+}
+else{
+
+    if(ticket.getTicketType()==0){
+        writer.write(prefix+"1Nombre: " + auxname.substring(0,cstrlength) + "\n");
+        if((auxname.length())>cstrlength){
+            writer.write(prefix+"2        " + auxname.substring(cstrlength,((auxname.length()>cstrlength2)?cstrlength2:auxname.length())) + "\n");
+        }	
+        if((auxname.length())>cstrlength2){
+            writer.write(prefix+"3        " + auxname.substring(cstrlength2,((auxname.length()>cstrlength3)?cstrlength3:auxname.length())) + "\n");
+        }
+        if((auxname.length())>cstrlength3){
+            writer.write(prefix+"4        " + auxname.substring(cstrlength3,((auxname.length()>cstrlength4)?cstrlength4:auxname.length())) + "\n");
+        }
+        
+        writer.write(prefix+"5C.I/RUC: " + auxtaxid + "\n");
+    }else if(ticket.getTicketType()==1){
+        writer.write(prefix+"SNombre: " + auxname.substring(0,cstrlength) + "\n");
+        writer.write(prefix+"RC.I/RUC: " + auxtaxid + "\n");
+        writer.write(prefix+"F" + ticket.printId() + "\n");
+    }
+}
+    if(ticket.getCustomer()!=null){
+        if(ticket.getCustomer().getAddress()!=null){
+            if(ticket.getCustomer().getAddress().trim().compareTo("")!=0){
+                auxaddress=ticket.getCustomer().getAddress().trim();
+            }
+        }
+    }
+if (giftcard == true) {
+prefix="800";
+    if(ticket.getTicketType()==0){
+        if(auxaddress.length()<=cstrlength){
+            cstrlength=auxaddress.length();			
+	}
+	writer.write(prefix+"Direccion: " + auxaddress.substring(0,cstrlength) + "\n");
+       	if((auxaddress.length())>cstrlength){
+            writer.write(prefix+"        " + auxaddress.substring(cstrlength,((auxaddress.length()>cstrlength2)?cstrlength2:auxaddress.length())) + "\n");
+	}	
+	if((auxaddress.length())>cstrlength2){
+            writer.write(prefix+"        " + auxaddress.substring(cstrlength2,((auxaddress.length()>cstrlength3)?cstrlength3:auxaddress.length())) + "\n");
+	}
+        writer.write(prefix+"Orden Nro.: " + ticket.printId() + "\n");
+    }
+}else{
+
+    if(ticket.getTicketType()==0){
+        if(auxaddress.length()<=cstrlength){
+            cstrlength=auxaddress.length();			
+	}
+	writer.write(prefix+"6Direccion: " + auxaddress.substring(0,cstrlength) + "\n");
+       	if((auxaddress.length())>cstrlength){
+            writer.write(prefix+"7        " + auxaddress.substring(cstrlength,((auxaddress.length()>cstrlength2)?cstrlength2:auxaddress.length())) + "\n");
+	}	
+	if((auxaddress.length())>cstrlength2){
+            writer.write(prefix+"8        " + auxaddress.substring(cstrlength2,((auxaddress.length()>cstrlength3)?cstrlength3:auxaddress.length())) + "\n");
+	}
+        writer.write(prefix+"9Orden Nro.: " + ticket.printId() + "\n");
+    }
+    }
+    length=ticket.getLinesCount();
+    String aux=null;
+    NumberFormat f = NumberFormat.getInstance(Locale.ENGLISH);
+    if (f instanceof DecimalFormat) {
+        ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+    }
+    DecimalFormat fo = new DecimalFormat("00000000.00");
+    DecimalFormat fcant = new DecimalFormat("00000.000");
+    DecimalFormat fdesc = new DecimalFormat("00.00");
+    BigDecimal bd =null;
+    ProductInfoExt product = null;
+    
+    String desc=null;
+    Double totalLines=0;
+    for (int i = 0; i < length; i++) {
+        int pstrlength=40;
+        line = ticket.getLine(i);
+        /*------- no imprimimos el servicio  -------*/
+        if(line.getProductID()!=null){
+            if(line.getProductID().compareTo("000")==0){
+                  break;
+            }
+        }
+        /*------- no imprimimos el servicio  -------*/
+        desc=line.printName();
+        if(desc.length()<=pstrlength){
+            pstrlength=desc.length();			
+        }
+	desc=desc.substring(0,pstrlength);
+        if(line.getPrice()>=0.0){
+            if(line.getProductID()!=null){
+                product = logicfiscal.getProductInfo(line.getProductID());
+            }
+            String itemprefix=" ";
+            if(ticket.getTicketType()==0){
+                if(line.getProductID()!=null){
+if (giftcard == true) {
+                    writer.write("800@Codigo: "+ product.getReference() +"\n");
+}else
+                    writer.write("@Codigo: "+ product.getReference() +"\n");
+		}
+		if (line.getTaxRate()==0.07){
+                    itemprefix="!";
+		}
+		if (line.getTaxRate()==0.1){
+                    itemprefix=String.valueOf((char)34);
+		}
+		if (line.getTaxRate()==0.15){
+                    itemprefix=String.valueOf((char)35);
+		}
+            }else{
+                itemprefix="d0";
+                if (line.getTaxRate()==0.07){
+                    itemprefix="d1";
+		}
+		if (line.getTaxRate()==0.1){
+                    itemprefix="d2";
+		}
+		if (line.getTaxRate()==0.15){
+                    itemprefix="d3";
+		}
+            }
+            bd = new BigDecimal(line.getPrice());
+            aux=fo.format(bd.doubleValue());
+if (giftcard == true) {
+itemprefix="800";
+}
+            writer.write(itemprefix+aux.replace(".","").replace(",",""));
+            aux=fcant.format(Math.abs(line.getMultiply()));
+            writer.write(aux.replace(".","").replace(",",""));
+            writer.write(desc + "\n");
+if (giftcard == true) {
+            writer.write(itemprefix+line.productAttSetInstDesc+"\n");
+}
+
+            totalLines+=(line.getPrice()*line.getMultiply()*(1+line.getTaxRate()));
+           
+        }else{
+            desc=line.printName().substring(10,line.printName().length()-1);
+            aux=fdesc.format(Double.parseDouble(desc));
+            writer.write("p-"+aux.replace(".","")+ "\n");
+        }
+    }
+if (giftcard == true) {
+itemprefix="800";
+writer.write(prefix+"Subtotal: "+ticket.printSubTotal()+"\n");
+    writer.write(prefix+"Impuesto: "+Formats.CURRENCY.formatValue(ticket.getTax())+"\n");
+    writer.write(prefix+"Total: "+ticket.printTotal()+"\n");
+    writer.write(prefix+"================================\n");
+    writer.write(prefix+"Esta tarjeta de regalo puede ser redimida\n");
+    writer.write(prefix+"por encantadores productos Lush solo en la\n");
+    writer.write(prefix+"República de Panamá. No puede ser redimida\n".replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'"));
+    writer.write(prefix+"por efectivo, al momento de la compra debe\n");
+    writer.write(prefix+"ser utilizada en su totalidad y eso solo valida\n");
+    writer.write(prefix+"al portador. Por favor usela pronto ya que es\n");
+    writer.write(prefix+" valida por 12 meses a partir de la emisión.\n".replace("&amp;", "&").replace("&quot;", "\"").replace("&apos;", "\'"));
+    writer.write(prefix+"No aplica con otras promociones.\n");
+    writer.write("810");
+}else {
+    if(ticket.getTicketType()==0){
+	DecimalFormat formatPayment = new DecimalFormat("0000000000.00");
+	System.out.println(ticket.getPayments());
+	Iterator i = ticket.getPayments().iterator();
+	Double montoefectivo=0;
+	Double totalPayment=0;
+	int pi=1;
+	while (i.hasNext()){
+            PaymentInfo paymentline = i.next();
+            bd = new BigDecimal(paymentline.getTotal());
+            
+            aux=formatPayment.format(bd.doubleValue());
+            if (paymentline.getName().compareTo("cash")==0){
+                if(paymentline.getChange()<=10000000.0){
+                    bd = new BigDecimal(paymentline.getTotal()+paymentline.getChange());
+                    aux=formatPayment.format(bd.doubleValue());
+                }
+                writer.write("201"+aux.replace(".","").replace(",","")+ "\n");
+            }if (paymentline.getName().compareTo("magcard")==0){
+                    writer.write("209"+aux.replace(".","").replace(",","")+ "\n");
+            }
+	}
+    }
+
+    writer.write("101");
+}
+    writer.flush();
+    writer.close();
+    String filePath = invoiceFolder + "IntTFHKA.exe SendFileCmd(" + invoiceFolder + "factura.txt)";
+    Process p = Runtime.getRuntime().exec(filePath);
+    p.waitFor();
+    //usamos filereader para extraer la informacion de si se imprimio exitosamente sino se envia un mensaje
+     
+    boolean checkprinter=false;
+    boolean StatusErrorExist=false;
+    while(!StatusErrorExist){
+        fileStatus = new File(invoiceFolder + "Status_Error.txt");    
+	StatusErrorExist=fileStatus.exists();
+    }
+    FileReader reader = new FileReader(fileStatus);
+    BufferedReader br = new BufferedReader(reader); 
+    String status; 
+    String[] statusError;
+    if(fileStatus.exists()){
+        // creates a FileReader Object
+        while((status = br.readLine()) != null) { 
+            statusError=status.split("\\t");
+            if(statusError[1].compareTo("0")==0){
+                checkprinter=true;
+            }
+        } 
+        reader.close(); 
+    }
+    if(!checkprinter){
+        String voidInvoice = invoiceFolder + "IntTFHKA.exe SendCmd(7)";
+        Process p = Runtime.getRuntime().exec(voidInvoice);
+        p.waitFor();
+        JOptionPane.showMessageDialog(null,"No se pudo imprimir el ticket correctamente. El ticket sera eliminado", "POS", JOptionPane.PLAIN_MESSAGE);   
+        logicsale.deleteTicket(ticket,"0");
+        return found;         
+    }
+    //generamos el estatus de informacion para leer la informacin fiscal y ejecutamos el proceso
+    String filePath2 = invoiceFolder + "IntTFHKA.exe UploadStatusCmd(S1)";
+    Process p1 = Runtime.getRuntime().exec(filePath2);
+    p1.waitFor();
+    while(!StatusErrorExist){
+        fileStatus = new File(invoiceFolder + "Status.txt");    
+	StatusErrorExist=fileStatus.exists();
+    }
+    //usamos filereader para extraer la informacion e insertarla en el ticket
+
+if (giftcard == true) {
+itemprefix="800";
+}else{
+    fileStatus = new File(invoiceFolder + "Status.txt");
+    if(!logicfiscal.updateTicketFiscalTheFactory(ticket,fileStatus)){
+        JOptionPane.showMessageDialog(null, 
+        "Ocurrio un problema actualizando la informacion fiscal", "POS", JOptionPane.PLAIN_MESSAGE);   
+        return found;         
+    }
+    if(ticket.getTicketType()==0 && lockTicketPrecheck.compareTo("Y")==0){
+        //delete file for precheck
+        file2 = new File(invoiceFolder + "/Eliminadas/" + ticket.getId() + ".txt"); 
+        if(file2.exists())
+            file2.delete();
+    }
+}
+}catch(Exception e){
+    e.printStackTrace();
+}	
+
+if(showChangeInScreen.compareTo("Y")==0){ 
+    if(ticket.getTicketType()==0){
+        boolean isCash = false;
+        String change = "";
+        PaymentInfo p = ticket.payments.getFirst();
+
+        if ("cash".equals(p.getName())) {
+            isCash = true;
+            change = p.printChange();
+        }
+
+        // Get details of the original font before we change it otherwise all dialogboxes will use new settings
+        JOptionPane pane = new JOptionPane();
+        Font originalFont=pane.getFont();
+
+        UIManager.put("OptionPane.buttonFont", new FontUIResource(new Font("ARIAL",Font.PLAIN,20)));
+        message = "Cambio: " + change;
+        JLabel FontText = new JLabel(message);
+        FontText.setFont (new Font ( "Arial", Font.BOLD, 36) );
+
+        if(isCash) {
+             JOptionPane pane = new JOptionPane();
+             pane.setMessage(FontText);
+             pane.setPreferredSize( new Dimension(450,150));
+             JDialog dialog = pane.createDialog("Pago en efectivo");
+            new Thread(new Runnable() {
+                 void run() {
+                    dialog.show();
+                } 
+            }).start();
+        }
+
+        // Return to default settings
+        UIManager.put("OptionPane.buttonFont", new FontUIResource(new Font(originalFont.getName(),originalFont.getStyle(),originalFont.getSize())));
+    }
+}
+
+

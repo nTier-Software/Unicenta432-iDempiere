@@ -1,0 +1,92 @@
+// script.StockCurrentSet
+// This script checks Stock Level for a sale item
+//
+//    uniCenta oPOS - Touch Friendly Point Of Sale
+//    Copyright (c) 2009-2014 uniCenta
+//    http://sourceforge.net/projects/unicentaopos
+//
+//    This file is part of uniCenta oPOS.
+//
+//    uniCenta oPOS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    uniCenta oPOS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with uniCenta oPOS.  If not, see <http://www.gnu.org/licenses/>.
+// **************************************************************************
+ 
+import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.data.loader.Session;
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.erp.sync.DataLogicIntegration;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.payment.PaymentInfo;
+import java.math.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import com.openbravo.data.loader.*;
+import java.awt.Font; 
+import javax.swing.plaf.FontUIResource; 
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+
+Session session = new Session(dbURL, dbUser, dbPassword);
+DataLogicSales logicsale = new DataLogicSales();
+logicsale.init(session);
+DataLogicSystem logicsystem = new DataLogicSystem();
+logicsystem.init(session);
+DataLogicIntegration logicintegration = new DataLogicIntegration();
+logicintegration.init(session);
+Properties p = logicsystem.getResourceAsProperties("fiscalprint.properties");
+String invoiceFolder = p.getProperty("invoiceFolder");
+String checkInventoryOnEdit = p.getProperty("checkInventoryOnEdit");
+String lockTicketPrecheck = p.getProperty("lockTicketPrecheck");
+Integer found = 1;
+if(lockTicketPrecheck.compareTo("Y")==0){
+    File file2=null;
+    try{    
+        file2 = new File(invoiceFolder+ "/Eliminadas/" + ticket.getId() + ".txt"); 
+        if(file2.exists()){
+            JOptionPane.showMessageDialog(null,"No puede eliminar el ticket porque ya se a impreso una precuenta", "POS", JOptionPane.PLAIN_MESSAGE);   
+            return 1;
+        }
+    }catch(Exception e){
+        e.printStackTrace();
+    }
+}
+
+if(checkInventoryOnEdit.compareTo("Y")==0){
+    p = logicsystem.getResourceAsProperties(hostname + "/properties");
+    String loc = p.getProperty("location");
+    product = line.getProductID();
+    isserv = line.isProductService();
+    units = logicsale.findProductStock(loc,product,null);
+    multiply = 0;
+    index = sales.getSelectedIndex();
+    if (line.isProductService() != true) {
+        if (index != -1) {
+            currentrow = ticket.getLine(index);
+            multiply = multiply - currentrow.getMultiply();
+        }
+        for (int i= 0; i < ticket.getLinesCount(); i++) {
+            row = ticket.getLine(i);
+            if (row.getProductID() == product) {
+                multiply = multiply + row.getMultiply();
+            }
+        }
+        diff = units - line.getMultiply() - multiply;
+        if (diff < 0.0) {
+            javax.swing.JOptionPane.showMessageDialog(null, "No hay suficiente inventario en la ubicacion " + loc , "Inventario", JOptionPane.WARNING_MESSAGE);
+            return "Cancel";
+        } else {
+            return null;
+        }
+    }
+}

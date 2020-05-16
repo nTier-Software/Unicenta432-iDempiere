@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.6.0.final using JasperReports Library version 6.6.0  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RequisitionFormat" pageWidth="792" pageHeight="612" orientation="Landscape" whenNoDataType="AllSectionsNoDetail" columnWidth="752" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryNewPage="true" uuid="84c1b2cc-c061-4a62-bbfb-818df94f3d10">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Tempo.xml"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="127"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="861"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="691"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="295"/>
+	<parameter name="RECORD_ID" class="java.lang.Integer"/>
+	<parameter name="RESOURCE_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/home/alara/JaspersoftWorkspace/TempoReports/"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="M_Requisition_ID" class="java.math.BigDecimal"/>
+	<queryString language="SQL">
+		<![CDATA[select rl.Qty,r.documentno,r.description,r.help,r.ad_user_id,
+bodyimg.binarydata bodyimg,bodyimgback.binarydata bodyimgback, 
+case when ri.RelatedProductType = 'B' THEN pattern.binarydata ELSE bodyimg.binarydata end AS patternimg,
+pattern.value patternvalue,
+body.value bodyvalue,
+mp.name catname,size.name size,ratio.name ratio,brand.name brand,org.name orgname,pm.value pmvalue,pm.name pmname,ri.M_RequisitionItem_ID,ri.M_Requisition_ID,rl.color,ri.RelatedProductType,ri.character  ri_character,
+ri.description ri_description,ri.M_RequisitionItem_ID ri_M_RequisitionItem_ID,r.DateRequired r_daterequired,ri.DocumentNote
+from M_RequisitionItem ri
+JOIN M_Requisition r ON r.M_Requisition_ID = ri.M_Requisition_ID
+inner join ad_org org on org.ad_org_id=r.ad_org_id
+--pattern
+left join (SELECT patternimg.binarydata as binarydata,m_product_id,value 
+		FROM M_Product ri_item 
+		left join ad_image patternimg on patternimg.ad_image_id = ri_item.ad_image_id) pattern 
+		on pattern.m_product_id = ri.pattern_id   
+--body
+left JOIN M_Product body on body.m_product_id =ri.body_id
+left join ad_image bodyimg on ri.ad_image_id=bodyimg.ad_image_id
+left join ad_image bodyimgback on ri.ad_image2_id=bodyimgback.ad_image_id 
+
+left join m_requisitionline rl on ri.M_RequisitionItem_ID = rl.M_RequisitionItem_ID
+left join M_Product_Category mp on mp.M_Product_Category_ID = rl.M_Product_Category_ID
+left join M_AttributeValue size on size.M_AttributeValue_ID = rl.size_id and size.m_attribute_id =1000000
+left join M_AttributeValue ratio on ratio.M_AttributeValue_ID = rl.ratio_id and ratio.m_attribute_id =1000001
+left join M_AttributeValue brand on brand.M_AttributeValue_ID = rl.Label_ID and brand.m_attribute_id =1000003
+left join M_ProductMaterial pm on pm.M_ProductMaterial_id=rl.M_ProductMaterial_id
+where r.m_requisition_id=$P{RECORD_ID}
+order by ri.line,rl.line ASC]]>
+	</queryString>
+	<field name="qty" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.label" value="qty"/>
+	</field>
+	<field name="documentno" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="documentno"/>
+	</field>
+	<field name="description" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="description"/>
+	</field>
+	<field name="help" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="help"/>
+	</field>
+	<field name="ad_user_id" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.label" value="ad_user_id"/>
+	</field>
+	<field name="bodyimg" class="java.awt.Image">
+		<property name="com.jaspersoft.studio.field.label" value="bodyimg"/>
+	</field>
+	<field name="bodyimgback" class="java.awt.Image">
+		<property name="com.jaspersoft.studio.field.label" value="bodyimgback"/>
+	</field>
+	<field name="patternimg" class="java.awt.Image">
+		<property name="com.jaspersoft.studio.field.label" value="patternimg"/>
+	</field>
+	<field name="patternvalue" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="patternvalue"/>
+	</field>
+	<field name="bodyvalue" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="bodyvalue"/>
+	</field>
+	<field name="catname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="catname"/>
+	</field>
+	<field name="size" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="size"/>
+	</field>
+	<field name="ratio" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="ratio"/>
+	</field>
+	<field name="brand" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="brand"/>
+	</field>
+	<field name="orgname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="orgname"/>
+	</field>
+	<field name="pmvalue" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="pmvalue"/>
+	</field>
+	<field name="pmname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="pmname"/>
+	</field>
+	<field name="m_requisitionitem_id" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.label" value="m_requisitionitem_id"/>
+	</field>
+	<field name="m_requisition_id" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.label" value="m_requisition_id"/>
+	</field>
+	<field name="color" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="color"/>
+	</field>
+	<field name="relatedproducttype" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="relatedproducttype"/>
+	</field>
+	<field name="ri_character" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="ri_character"/>
+	</field>
+	<field name="ri_description" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="ri_description"/>
+	</field>
+	<field name="ri_m_requisitionitem_id" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.label" value="ri_m_requisitionitem_id"/>
+	</field>
+	<field name="r_daterequired" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.label" value="r_daterequired"/>
+	</field>
+	<field name="DocumentNote" class="java.lang.String"/>
+	<group name="item" isStartNewPage="true" minHeightToStartNewPage="130">
+		<groupExpression><![CDATA[$F{ri_m_requisitionitem_id}]]></groupExpression>
+		<groupHeader>
+			<band height="348">
+				<rectangle>
+					<reportElement x="630" y="0" width="120" height="140" backcolor="rgba(255, 255, 255, 0.0)" uuid="eda4d1ce-ad6f-4176-b829-d02fd22d7ade"/>
+				</rectangle>
+				<image scaleImage="RetainShape" isUsingCache="true">
+					<reportElement key="" x="28" y="32" width="282" height="288" uuid="23d27647-8858-4e5c-956c-7081e23d4639"/>
+					<imageExpression><![CDATA[$F{bodyimg}]]></imageExpression>
+				</image>
+				<image scaleImage="RetainShape" isUsingCache="true">
+					<reportElement x="330" y="32" width="278" height="288" uuid="88e99505-72f8-48a8-a614-e6ee04428351"/>
+					<imageExpression><![CDATA[$F{bodyimgback}]]></imageExpression>
+				</image>
+				<staticText>
+					<reportElement x="50" y="333" width="99" height="15" uuid="c8905f1f-39bd-4273-bd43-7feb46c73560"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0" lineStyle="Solid"/>
+						<topPen lineWidth="1.0"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="1.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[CATEGORY]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="297" y="333" width="195" height="15" uuid="39229717-89f2-41ef-8005-bea722612d73"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[COLOR]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="149" y="333" width="29" height="15" uuid="989b81cf-4cc6-46ad-9d27-d783b10f0e31"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[QTY]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="178" y="333" width="51" height="15" uuid="86a9c497-6216-4b37-aea4-b9e8063ea56c"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[SIZE]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="229" y="333" width="68" height="15" uuid="4ca44a31-9b56-4530-9a27-d6eb74e85eda"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[RATIO]]></text>
+				</staticText>
+				<textField isBlankWhenNull="true">
+					<reportElement x="250" y="0" width="210" height="30" uuid="2a32028d-a427-4393-a7b2-c96b2e0703f6"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="14" isBold="true" pdfFontName="Times-Roman"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{bodyvalue}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="492" y="333" width="95" height="15" uuid="5fbf6bf8-934a-42b8-9339-826435896f33"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[LABEL]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="587" y="333" width="80" height="15" uuid="652bbc54-1e5a-45c0-bf30-0d2ac5add57b"/>
+					<box leftPadding="5" rightPadding="5">
+						<pen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[MATERIAL CODE]]></text>
+				</staticText>
+				<image scaleImage="FillFrame">
+					<reportElement x="643" y="36" width="92" height="82" uuid="058ba126-6621-42a1-b353-8f7b4a83438e">
+						<printWhenExpression><![CDATA[$F{patternvalue}!=null]]></printWhenExpression>
+					</reportElement>
+					<imageExpression><![CDATA[$F{patternimg}]]></imageExpression>
+				</image>
+				<textField isBlankWhenNull="true">
+					<reportElement x="68" y="320" width="599" height="13" uuid="6fd1ed92-2149-4d61-b3e8-eb8b3db1b8ea"/>
+					<textElement verticalAlignment="Middle"/>
+					<textFieldExpression><![CDATA[$F{DocumentNote}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="456" y="0" width="34" height="30" uuid="fdd2681b-a727-4e8d-a986-8cef009c3a54"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="14" isBold="true" pdfFontName="Times-Roman"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ri_character}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="630" y="16" width="122" height="15" uuid="99665275-c098-41a9-9702-29029c58d987">
+						<printWhenExpression><![CDATA[$F{patternvalue}!=null]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" isBold="true" isItalic="true" pdfFontName="Times-Roman"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{patternvalue}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="630" y="0" width="120" height="15" uuid="f5b598b0-2975-42f0-bffc-34429a63d70f">
+						<printWhenExpression><![CDATA[$F{patternvalue}!=null]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" isBold="true" isUnderline="true" pdfFontName="Times-Roman"/>
+					</textElement>
+					<text><![CDATA[Pattern]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="26" splitType="Stretch">
+				<subreport overflowType="Stretch">
+					<reportElement positionType="Float" stretchType="ContainerHeight" x="1" y="3" width="750" height="23" isPrintWhenDetailOverflows="true" uuid="977aa8ec-181a-4b3a-b884-d301cb21b50a"/>
+					<subreportParameter name="M_RequisitionItem_ID">
+						<subreportParameterExpression><![CDATA[$F{m_requisitionitem_id}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportExpression><![CDATA[$P{RESOURCE_DIR}+"RequisitionComment.jasper"]]></subreportExpression>
+				</subreport>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="45" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="110" y="0" width="510" height="30" uuid="a2e26df8-0e8b-4dc9-8798-f62c9add0b98"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{orgname}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="40" y="0" width="70" height="15" uuid="7405f2e5-ad9c-4a6c-a088-61c53e488e79"/>
+				<textElement textAlignment="Right" verticalAlignment="Bottom"/>
+				<textFieldExpression><![CDATA[$F{r_daterequired}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="620" y="0" width="80" height="30" uuid="2d04ada8-46fa-4199-bc52-828a3161cfd8"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA["Pag " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="700" y="0" width="50" height="30" uuid="e8d66056-dd58-4795-b1c4-d323bf4f3f11"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[" de " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1" y="0" width="39" height="15" uuid="bf1e84ab-a544-48a3-8452-b579b82cda8e"/>
+				<textElement textAlignment="Right" verticalAlignment="Bottom"/>
+				<text><![CDATA[Fecha:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="15" width="39" height="15" uuid="3b5f8dad-865f-41b5-8fc7-1abf6bb2109a"/>
+				<textElement textAlignment="Right" verticalAlignment="Bottom"/>
+				<text><![CDATA[Nro:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="40" y="15" width="70" height="15" uuid="2bbfb03c-47df-4045-915b-4da34aae8743"/>
+				<textElement textAlignment="Right" verticalAlignment="Bottom"/>
+				<textFieldExpression><![CDATA[$F{documentno}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="30" width="250" height="15" uuid="fb1d5d1e-b860-4cf2-98a0-9e93d8c1a7a3"/>
+				<textElement verticalAlignment="Bottom"/>
+				<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="50" y="0" width="99" height="15" isPrintWhenDetailOverflows="true" uuid="a0280576-45f6-48c3-877e-3b951d8dc990"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{catname}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="149" y="0" width="29" height="15" isPrintWhenDetailOverflows="true" uuid="570f0679-e7df-46f8-82a4-29079b1a3fba"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qty}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="178" y="0" width="51" height="15" isPrintWhenDetailOverflows="true" uuid="13681196-d495-486c-9ed8-73c2df287ff6"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{size}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="229" y="0" width="68" height="15" isPrintWhenDetailOverflows="true" uuid="6b5f9d56-e40b-49d9-8569-303787a6ea70"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ratio}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="297" y="0" width="195" height="15" isPrintWhenDetailOverflows="true" uuid="46732c22-9264-4bf2-af78-8705eef280fb"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{color}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="492" y="0" width="95" height="15" isPrintWhenDetailOverflows="true" uuid="ee3dd038-ab20-406b-b2e9-352362476fcc"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{brand}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="ElementGroupBottom" x="587" y="0" width="80" height="15" isPrintWhenDetailOverflows="true" uuid="73296a7a-2634-4383-9b72-75e24cbd61d7"/>
+				<box leftPadding="5" rightPadding="5">
+					<pen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pmvalue}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="32">
+			<subreport>
+				<reportElement x="0" y="2" width="750" height="30" uuid="7d1d6ae2-466a-46c4-af8f-1baebe68ef54"/>
+				<subreportParameter name="M_Requisition_ID">
+					<subreportParameterExpression><![CDATA[$F{m_requisition_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{RESOURCE_DIR}+"ItemColors.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+</jasperReport>

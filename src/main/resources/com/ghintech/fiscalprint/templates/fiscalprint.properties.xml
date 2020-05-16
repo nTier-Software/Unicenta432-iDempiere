@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>Fiscal Print Global Configuration</comment>
+    <entry key="confirmxz">Y</entry>
+    <entry key="MandatoryCustomer">Y</entry>
+    <entry key="checkInventoryOnEdit">Y</entry>
+    <entry key="checkInventoryOnAdd">Y</entry>
+    <entry key="showChangeInScreen">Y</entry>
+    <entry key="lockTicketPrecheck">N</entry>
+    <entry key="requestTipAmt">N</entry>
+    <entry key="AddRefund2CurDebt">Y</entry>
+</properties>
