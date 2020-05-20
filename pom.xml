@@ -437,7 +437,8 @@
     <repository> 
       <id>maven2-repository.netbeans.maven2</id>  
       <name>Netbeans Maven Repository</name>  
-      <url>http://bits.netbeans.org/maven2/</url>  
+      <!--url>http://bits.netbeans.org/maven2/</url-->  
+      <url>https://repo.spring.io/plugins-release/</url>
       <layout>default</layout> 
     </repository>
     <repository> 
