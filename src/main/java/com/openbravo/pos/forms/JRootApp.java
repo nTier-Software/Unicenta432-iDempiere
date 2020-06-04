@@ -75,7 +75,7 @@ import com.dalsemi.onewire.application.monitor.*;
 import com.openbravo.pos.util.uOWWatch;
 
 /**
- *
+ *TicketInfo
  * @author adrianromero
  */
 // public class JRootApp extends JPanel implements AppView {

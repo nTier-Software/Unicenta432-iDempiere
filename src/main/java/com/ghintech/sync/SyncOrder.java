@@ -53,9 +53,51 @@ public final class SyncOrder extends Sync {
            invoice.setLimit(1);    
            DataRow datainvoice = new DataRow();
            datainvoice.addField("DocumentNo", data.getField("DocumentNo").getValue());
-         /*  datainvoice.addField("OPOS_line", data.getField("OPOS_line").getValue()); yn060520 */
+         /*  datainvoice.addField("OPOS_line", data.getField("OPOS_line").getValue()); yogan060520 */
            datainvoice.addField("AD_Org_ID", data.getField("AD_Org_ID").getValue());
            datainvoice.addField("C_DocType_ID", data.getField("C_DocType_ID").getValue());
+           invoice.setDataRow(datainvoice);
+           WebServiceConnection clienti = getClient();
+           WindowTabDataResponse responsei = clienti.sendRequest(invoice);  
+           if (responsei.getStatus() == Enums.WebServiceResponseStatus.Error) {
+               System.out.println(responsei.getErrorMessage());
+		return 0;
+           } else {
+                Record_ID = responsei.getDataSet().getRow(0).getFields().get(0).getIntValue();    
+           }                        
+        } catch (WebServiceException | NumberFormatException e) {
+            System.err.println(e.getMessage());
+        }
+        return Record_ID;
+    }
+    
+    public int SendNewOrder(DataRow data) {
+        int Record_ID=0;
+        CompositeOperationRequest compositeOperation = new CompositeOperationRequest();
+        compositeOperation.setLogin(getLogin());
+        compositeOperation.setWebServiceType(getwsCompositeOrderType());        
+        CreateDataRequest ws = new CreateDataRequest();        
+        ws.setWebServiceType(getWsOrderType());
+       // ws.setLogin(getLogin());       
+        ws.setDataRow(data);
+        compositeOperation.addOperation(ws);
+        try {
+            WebServiceConnection client = getClient();
+            CompositeResponse response = client.sendRequest(compositeOperation);
+            if (response.getStatus() == Enums.WebServiceResponseStatus.Error) {
+                System.out.println(response.getErrorMessage());
+                return 0;
+            }
+            //now i need to get the ID of the record
+           QueryDataRequest invoice = new QueryDataRequest();
+           invoice.setWebServiceType(getwsCurrentOrder());
+           invoice.setLogin(getLogin());
+           invoice.setLimit(1);    
+           DataRow datainvoice = new DataRow();
+           datainvoice.addField("DocumentNo", data.getField("DocumentNo").getValue());
+         /*  datainvoice.addField("OPOS_line", data.getField("OPOS_line").getValue()); yogan060520 */
+           datainvoice.addField("AD_Org_ID", data.getField("AD_Org_ID").getValue());
+           datainvoice.addField("C_DocType_ID", data.getField("C_DocTypeTarget_ID").getValue());
            invoice.setDataRow(datainvoice);
            WebServiceConnection clienti = getClient();
            WindowTabDataResponse responsei = clienti.sendRequest(invoice);  

@@ -22,7 +22,7 @@
     <entry key="wsProductType">Productos</entry>    
     <entry key="wsCustomerType">Clientes</entry>
     <entry key="wsPeopleType">Usuarios</entry>
-    <entry key="wsOrderType">Ordenes</entry>
+    <entry key="wsOrderType">nTierCreateOrder</entry>
     <entry key="wsClosedcashType">ClosedCash</entry>
     <entry key="WsMovementType">Movement</entry>
     <entry key="wsImportOrderType">ProcessOrders</entry>
