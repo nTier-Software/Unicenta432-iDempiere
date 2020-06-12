@@ -33,6 +33,7 @@ import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSystem;
 import com.openbravo.pos.forms.JRootApp;
+import com.openbravo.pos.payment.PaymentInfo;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import com.openbravo.pos.ticket.TicketInfo;
 import com.openbravo.pos.ticket.TicketLineInfo;
@@ -91,6 +92,11 @@ public class SyncOrderThread extends Thread {
     private final Properties erpProperties;
     private final String hostname;
 
+    final String UCTenderType_CASH = "cash";
+    final String UCTenderType_CREDITCARD = "magcard";
+    final String UCTenderType_EFT = "bank";
+    final String UCTenderType_CREDIT = "debt";
+
     public SyncOrderThread(JRootApp rootApp) {
 
         app = rootApp;
@@ -109,15 +115,15 @@ public class SyncOrderThread extends Thread {
         boolean sent = true;
         Double stopLoop;
         int c = 0;
-        try {
-            dlintegration.checkTickets();
+        /*        try {
+            //dlintegration.checkTickets();
             if (erpProperties.getProperty("SentAllOrders").equals("Y")) {
                 dlintegration.checkTicketsFiscalNumber();
             }
 
         } catch (BasicException e) {
 
-        }
+        } */
         while (true) {
             try {
 
@@ -160,23 +166,20 @@ public class SyncOrderThread extends Thread {
         if (ticketlist.isEmpty()) {
             //dlintegration.execTicketUpdate();
             return new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.zeroorders"));
+        } else if (createWsOrder(ticketlist, orders)) {
+            return new MessageInf(MessageInf.SGN_SUCCESS, AppLocal.getIntString("message.syncordersok"), AppLocal.getIntString("message.syncordersinfo") + ticketlist.size());
         } else {
-            //           int result = transformTickets(ticketlist, orders);
-            int result = createWsOrder(ticketlist, orders);
-            if (result != 0) {
-                return new MessageInf(MessageInf.SGN_SUCCESS, AppLocal.getIntString("message.syncordersok"), AppLocal.getIntString("message.syncordersinfo") + ticketlist.size());
-            } else {
-                return new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.syncorderserror"), AppLocal.getIntString("message.syncordersinfo") + ticketlist.size());
-            }
+            return new MessageInf(MessageInf.SGN_WARNING, AppLocal.getIntString("message.syncorderserror"), AppLocal.getIntString("message.syncordersinfo") + ticketlist.size());
         }
 
     }
 
-    private int createWsOrder(List<TicketInfo> ticketlist, SyncOrder orders) {
+    private boolean createWsOrder(List<TicketInfo> ticketlist, SyncOrder orders) {
+
+        boolean isOrdersSentOk = true;
 
         System.out.println("\n" + new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.qtyorders_sync")).getMessageMsg()
                 + ticketlist.size() + "\n");
-        int recordid = 0;
 
         // Create Composite WS
         CompositeOperationRequest compositeOperation = new CompositeOperationRequest();
@@ -185,6 +188,7 @@ public class SyncOrderThread extends Thread {
         // Set Login
         compositeOperation.setLogin(orders.getLogin());
 
+        CompositeResponse response = null;
         Iterator iterator = ticketlist.iterator();
         while (iterator.hasNext()) {
             TicketInfo ticket = (TicketInfo) iterator.next();
@@ -193,22 +197,42 @@ public class SyncOrderThread extends Thread {
 
             createWsOrderlines(compositeOperation, ticket);
 
-            createWsMixedPayment(compositeOperation, ticket);
+            List<PaymentInfo> payments = ticket.getPayments();
+            if (!payments.get(0).getName().equals(UCTenderType_CREDIT)) {
+                createWsMixedPayment(compositeOperation, ticket);
+            }
 
             completeOrder(compositeOperation);
 
-            sendRequest(compositeOperation);
+            response = sendRequest(compositeOperation);
 
-            recordid = queryOrderRecordId(ticket);
-                      if (recordid != 0) {
-                         dlintegration.execTicketLineUpdate(ticket.getId(), line.getTicketLine(), recordid);
-                   }
+            if (response.getStatus() == WebServiceResponseStatus.Error) {
+                isOrdersSentOk = false;
+            }
+
+            updateTicketSyncStatus(response, ticket);
         }
-        return recordid;
+        return isOrdersSentOk;
     }
 
-    public void sendRequest(CompositeOperationRequest compositeOperation) {
-        int result = 0;
+    private void updateTicketSyncStatus(CompositeResponse response, TicketInfo ticket) {
+        try {
+            if (response.getStatus() == WebServiceResponseStatus.Successful) {
+                System.out.println("\n" + "*************Order Imported: "
+                        + ticket.getTicketId() + "*************" + "\n");
+                dlintegration.execTicketUpdate(ticket.getId(), "1");
+
+            } else {
+                System.out.println("\n" + "*************Order Not Imported: "
+                        + ticket.getTicketId() + "*************" + "\n");
+                dlintegration.execTicketUpdate(ticket.getId(), "0");
+            }
+        } catch (BasicException ex) {
+            Logger.getLogger(SyncOrderThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public CompositeResponse sendRequest(CompositeOperationRequest compositeOperation) {
         // CREATE CLIENT
         WebServiceConnection client = orders.getClient();
         CompositeResponse response = null;
@@ -238,6 +262,7 @@ public class SyncOrderThread extends Thread {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return response;
     }
 
     public int sendWsQueryRequest(QueryDataRequest wsRequest) {
@@ -290,8 +315,8 @@ public class SyncOrderThread extends Thread {
             dataOrderLine.addField("QtyOrdered", Double.toString(Math.abs(line.getMultiply())));
             dataOrderLine.addField("QtyEntered", Double.toString(Math.abs(line.getMultiply())));
             dataOrderLine.addField("Line", String.valueOf((Math.abs(line.getTicketLine()) + 1) * 10));
-            dataOrderLine.addField("PriceEntered", Double.toString(line.getPrice()));
-            dataOrderLine.addField("PriceActual", Double.toString(line.getPrice()));
+            dataOrderLine.addField("PriceEntered", Double.toString(round(line.getPrice(), 2)));
+            dataOrderLine.addField("PriceActual", Double.toString(round(line.getPrice(), 2)));
             dataOrderLine.addField("C_Tax_ID", line.getTaxInfo().getId());
 
             createOrderLine.setDataRow(dataOrderLine);
@@ -337,7 +362,10 @@ public class SyncOrderThread extends Thread {
         data.addField("DocumentNo", Integer.toString(ticket.getTicketId()));
         data.addField("DateOrdered", new java.sql.Timestamp(datenew.getTime().getTime()).toString());
         data.addField("SalesRep_ID", Integer.valueOf(ticket.getUser().getId()));
-        data.addField("PaymentRule", "M");
+
+        List<PaymentInfo> payments = ticket.getPayments();
+        data.addField("PaymentRule", (payments.get(0).getName().equals(UCTenderType_CREDIT)) ? "P" : "M");
+
         data.addField("Bill_Location_ID", "113");
 
         createOrder.setDataRow(data);
@@ -352,20 +380,73 @@ public class SyncOrderThread extends Thread {
         data.addField("AD_Client_ID", "@C_Order.AD_Client_ID");
         data.addField("AD_Org_ID", "@C_Order.AD_Org_ID");
         data.addField("C_Order_ID", "@C_Order.C_Order_ID");
-
-        data.addField("C_POSTenderType_ID", "1000000");
+        setPaymentTenderType(data, ticket);
         data.addField("PayAmt", Double.toString(round(ticket.getTotal(), 2)));
-        data.addField("TenderType", "C");
 
         createMixedPayment.setDataRow(data);
         compositeOperation.addOperation(createMixedPayment);
 
     }
 
+    enum IDPosTenderType {
+        CASH("1000001"),
+        CREDITCARD("1000000"),
+        EFT("1000002");
+
+        private final String value;
+
+        public final String getValue() {
+            return value;
+        }
+
+        private IDPosTenderType(String value) {
+            this.value = value;
+        }
+    }
+
+    enum IDTenderType {
+        CASH("X"),
+        CREDITCARD("C"),
+        EFT("A");
+
+        private final String value;
+
+        public final String getValue() {
+            return value;
+        }
+
+        private IDTenderType(String value) {
+            this.value = value;
+        }
+    }
+
+    private void setPaymentTenderType(DataRow data, TicketInfo ticket) {
+
+        List<PaymentInfo> payments = ticket.getPayments();
+
+        switch (payments.get(0).getName()) {
+            case UCTenderType_CASH:
+                data.addField("C_POSTenderType_ID", IDPosTenderType.CASH.getValue());
+                data.addField("TenderType", IDTenderType.CASH.getValue());
+                break;
+            case UCTenderType_CREDITCARD:
+                data.addField("C_POSTenderType_ID", IDPosTenderType.CREDITCARD.getValue());
+                data.addField("TenderType", IDTenderType.CREDITCARD.getValue());
+                break;
+            case UCTenderType_EFT:
+                data.addField("C_POSTenderType_ID", IDPosTenderType.EFT.getValue());
+                data.addField("TenderType", IDTenderType.EFT.getValue());
+                break;
+            default:
+                System.out.println("\n" + "************ UC tender type not recognised*************"
+                        + payments.get(0).getName());
+                data.addField("C_POSTenderType_ID", IDPosTenderType.CASH.getValue());
+                data.addField("TenderType", IDTenderType.CASH.getValue());
+        }
+    }
+
     private void completeOrder(CompositeOperationRequest compositeOperation) {
         SetDocActionRequest createDocAction = new SetDocActionRequest();
-
-        //createDocAction.setLogin(orders.getLogin());
         createDocAction.setWebServiceType("nTierCompleteOrder");
         createDocAction.setTableName("C_Order");
         createDocAction.setRecordID(0);
@@ -572,11 +653,13 @@ public class SyncOrderThread extends Thread {
                     } else {
                         System.out.println("*************Aun Faltan Lineas: " + ticket.getTicketId() + "*************");
                         dlintegration.execTicketUpdate(ticket.getId(), "0");
+
                     }
                     //PROCESAR ORDEN
 
                 } catch (BasicException ex) {
-                    Logger.getLogger(SyncOrderThread.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(SyncOrderThread.class
+                            .getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }
