@@ -552,7 +552,7 @@ public class JRootApp extends JPanel implements AppView, DeviceMonitorEventListe
             if(!m_dlSystem.getResourceAsProperties("erp.properties").isEmpty()){
                 syncOrderThread = new SyncOrderThread(this);
                 syncOrderThread.start();
-              /*  syncProductsThread = new SyncProductsThread(this);
+            /*    syncProductsThread = new SyncProductsThread(this);
                 syncProductsThread.start();
                 syncPeopleThread = new SyncPeopleThread(this);
                 syncPeopleThread.start();

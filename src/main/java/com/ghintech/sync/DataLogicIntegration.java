@@ -642,14 +642,14 @@ public class DataLogicIntegration extends BeanFactoryDataSingle {
                 , null
                 , new SerializerReadClass(TicketInfo.class)).list();
     }*/
-    public List getTicketsSync(String hostname) throws BasicException {
+    public List getTicketsToSync(String hostname) throws BasicException {
         //new StaticSentence(s, "update tickets set status=0 where id in (select ticket from ticketlines where i_order_id is null) ").exec();
         return new PreparedSentence(s, "SELECT T.ID, T.TICKETTYPE, T.TICKETID, R.DATENEW, R.MONEY, R.ATTRIBUTES, P.ID, P.NAME, C.ID,T.STATUS,C.SEARCHKEY, C.NAME, C.TAXID "
                 + "FROM TICKETS T "
                 + "INNER JOIN RECEIPTS R ON T.ID = R.ID "
                 + "LEFT OUTER JOIN PEOPLE P ON T.PERSON = P.ID "
                 + "LEFT OUTER JOIN CUSTOMERS C ON T.CUSTOMER = C.ID "
-                + "WHERE (T.TICKETTYPE = 0 OR T.TICKETTYPE = 1) AND T.STATUS = 2  AND (hostsync = '" + hostname + "' OR hostsync IS NULL) "
+                + "WHERE (T.TICKETTYPE = 0 OR T.TICKETTYPE = 1) AND T.STATUS = 0  AND (hostsync = '" + hostname + "' OR hostsync IS NULL) "
                 + "GROUP BY T.ID, T.TICKETTYPE, T.TICKETID, R.DATENEW, R.MONEY, R.ATTRIBUTES, P.ID, P.NAME, C.ID, C.SEARCHKEY, C.NAME, C.TAXID "
                 + "ORDER BY T.TICKETID ASC", null, new SerializerReadClass(TicketInfo.class)).list();
     }
@@ -739,7 +739,7 @@ public class DataLogicIntegration extends BeanFactoryDataSingle {
     }
 
     public void execTicketUpdate(String ticketid, String STATUS) throws BasicException {
-        new StaticSentence(s, "UPDATE TICKETS SET STATUS = " + STATUS + " WHERE STATUS = 2 AND ID='" + ticketid + "'").exec();
+        new StaticSentence(s, "UPDATE TICKETS SET STATUS = " + STATUS + " WHERE STATUS = 0 AND ID='" + ticketid + "'").exec();
     }
 
     public void execTicketUpdateError() throws BasicException {
