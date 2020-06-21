@@ -41,4 +41,5 @@
     <entry key="wsGiftCardTypeInterval">60.0</entry>
     <entry key="wsCurrentGiftCard">CurrentGiftCard</entry>
     <entry key="SentAllOrders">N</entry>
+    <entry key="DefaultCity">NotSet</entry>
  </properties>

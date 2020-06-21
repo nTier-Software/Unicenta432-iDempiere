@@ -128,7 +128,7 @@ public class SyncOrderThread extends Thread {
         while (true) {
             try {
 
-                stopLoop = sent == true ? orders.getWsOrderTypeInterval() : 0.25;
+                stopLoop = sent == true ? Double.valueOf(erpProperties.getProperty("wsOrderTypeInterval")) : 0.25;
 
                 if (c != 0) {
                     sleep(converter(stopLoop));
@@ -188,7 +188,7 @@ public class SyncOrderThread extends Thread {
             TicketInfo ticket = (TicketInfo) iterator.next();
             // Create Composite WS
             CompositeOperationRequest compositeOperation = new CompositeOperationRequest();
-            compositeOperation.setWebServiceType(orders.getwsCompositeOrderType());
+            compositeOperation.setWebServiceType(erpProperties.getProperty("wsCompositeOrderType"));
 
             // Set Login
             compositeOperation.setLogin(orders.getLogin());
@@ -296,7 +296,7 @@ public class SyncOrderThread extends Thread {
         for (TicketLineInfo line : ticket.getLines()) {
             // Create WS for Order Line
             CreateDataRequest createOrderLine = new CreateDataRequest();
-            createOrderLine.setWebServiceType("nTierCreateOrderLine");
+            createOrderLine.setWebServiceType(erpProperties.getProperty("wsCreateOrderLine"));
             DataRow dataOrderLine = new DataRow();
             dataOrderLine.addField("AD_Client_ID", "@C_Order.AD_Client_ID");
             dataOrderLine.addField("AD_Org_ID", "@C_Order.AD_Org_ID");
@@ -328,7 +328,7 @@ public class SyncOrderThread extends Thread {
     private void buildOrder(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         // Create WS for Order
         CreateDataRequest createOrder = new CreateDataRequest();
-        createOrder.setWebServiceType(orders.getWsOrderType());
+        createOrder.setWebServiceType(erpProperties.getProperty("wsOrderType"));
         DataRow data = new DataRow();
         Calendar datenew = Calendar.getInstance();
         datenew.setTime(ticket.getDate());
@@ -350,19 +350,21 @@ public class SyncOrderThread extends Thread {
         } else {
             createBP(compositeOperation, ticket);
             data.addField("C_BPartner_ID", "@C_BPartner.C_BPartner_ID");
+            data.addField("C_BPartner_Location_ID", "@C_BPartner_Location.C_BPartner_Location_ID");
+
         }
 
         if (ticket.getTicketType() == 0) {
 
-            data.addField("C_DocTypeTarget_ID", orders.getC_DocType_ID()); //regular order
+            data.addField("C_DocTypeTarget_ID", erpProperties.getProperty("C_DocType_ID")); //regular order
         } else {
 
-            data.addField("C_DocTypeTarget_ID", orders.getC_DocTypeRefund_ID()); //return
+            data.addField("C_DocTypeTarget_ID", erpProperties.getProperty("C_DocTypeRefund_ID")); //return
         }
-        data.addField("AD_Client_ID", orders.getAD_Client_ID());
-        data.addField("AD_Org_ID", orders.getAD_Org_ID());
+        data.addField("AD_Client_ID", erpProperties.getProperty("AD_Client_ID"));
+        data.addField("AD_Org_ID", erpProperties.getProperty("AD_Org_ID"));
 
-        data.addField("M_Warehouse_ID", orders.getM_Warehouse_ID());
+        data.addField("M_Warehouse_ID", erpProperties.getProperty("M_Warehouse_ID"));
 
         data.addField("DocumentNo", Integer.toString(ticket.getTicketId()));
         data.addField("DateOrdered", new java.sql.Timestamp(datenew.getTime().getTime()).toString());
@@ -370,7 +372,6 @@ public class SyncOrderThread extends Thread {
 
         List<PaymentInfo> payments = ticket.getPayments();
         data.addField("PaymentRule", (payments.get(0).getName().equals(UCTenderType_CREDIT)) ? "P" : "M");
-        data.addField("C_BPartner_Location_ID", "@C_BPartner_Location.C_BPartner_Location_ID");
 
         createOrder.setDataRow(data);
         compositeOperation.addOperation(createOrder);
@@ -378,11 +379,10 @@ public class SyncOrderThread extends Thread {
 
     private void createBP(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         CreateUpdateDataRequest createBP = new CreateUpdateDataRequest();
-        createBP.setWebServiceType("nTierCreateBP");
+        createBP.setWebServiceType(erpProperties.getProperty("wsCreateBP"));
         DataRow data = new DataRow();
 
         data.addField("Name", ticket.getCustomer().getName());
-        data.addField("TaxID", "12345");
         data.addField("IsCustomer", "Y");
         data.addField("IsVendor", "N");
 
@@ -394,7 +394,7 @@ public class SyncOrderThread extends Thread {
 
     private void createBPLocation(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         CreateUpdateDataRequest createBPLocation = new CreateUpdateDataRequest();
-        createBPLocation.setWebServiceType("nTierCreateBPLocation");
+        createBPLocation.setWebServiceType(erpProperties.getProperty("wsCreateBPLocation"));
         DataRow data = new DataRow();
 
         data.addField("C_BPartner_ID", "@C_BPartner.C_BPartner_ID");
@@ -408,18 +408,25 @@ public class SyncOrderThread extends Thread {
         createUser(compositeOperation, ticket);
     }
 
+    public static boolean isBlankOrNull(String str) {
+        return (str == null || "".equals(str.trim()));
+    }
+
     private void createLocation(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         CreateUpdateDataRequest createLocation = new CreateUpdateDataRequest();
-        createLocation.setWebServiceType("nTierCreateLocation");
+        createLocation.setWebServiceType(erpProperties.getProperty("wsCreateLocation"));
         DataRow data = new DataRow();
 
         Field field = new Field("C_Country_ID");
-        field.setLval(ticket.getCustomer().getCountry());
+        field.setLval(isBlankOrNull(ticket.getCustomer().getCountry())
+                ? erpProperties.getProperty("country") : ticket.getCustomer().getCountry());
         data.addField(field);
-        data.addField("Address1", ticket.getCustomer().getAddress());
+        data.addField("Address1", isBlankOrNull(ticket.getCustomer().getCountry())
+                ? erpProperties.getProperty("address1") : ticket.getCustomer().getAddress());
         data.addField("Address2", ticket.getCustomer().getAddress2());
         data.addField("Postal", ticket.getCustomer().getPostal());
-        data.addField("City", ticket.getCustomer().getCity());
+        data.addField("City", isBlankOrNull(ticket.getCustomer().getCountry())
+                ? erpProperties.getProperty("city") : ticket.getCustomer().getCity());
 
         createLocation.setDataRow(data);
         compositeOperation.addOperation(createLocation);
@@ -430,13 +437,19 @@ public class SyncOrderThread extends Thread {
 
     private void createUser(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         CreateUpdateDataRequest createUser = new CreateUpdateDataRequest();
-        createUser.setWebServiceType("nTierCreateUser");
+        createUser.setWebServiceType(erpProperties.getProperty("wsCreateUser"));
         DataRow data = new DataRow();
 
-        data.addField("Name", ticket.getCustomer().getFirstname());
+        if (isBlankOrNull(ticket.getCustomer().getFirstname()) || isBlankOrNull(ticket.getCustomer().getEmail())) {
+            data.addField("Name", erpProperties.getProperty("contactName"));
+            data.addField("EMail", erpProperties.getProperty("email"));
+        } else {
+            data.addField("Name", ticket.getCustomer().getFirstname());
+            data.addField("EMail", ticket.getCustomer().getEmail());
+        }
+
         data.addField("C_BPartner_ID", "@C_BPartner.C_BPartner_ID");
         data.addField("C_BPartner_Location_ID", "@C_BPartner_Location.C_BPartner_Location_ID");
-        data.addField("EMail", ticket.getCustomer().getEmail());
         data.addField("Phone", ticket.getCustomer().getPhone());
 
         createUser.setDataRow(data);
@@ -447,7 +460,7 @@ public class SyncOrderThread extends Thread {
     private void createWsMixedPayment(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         // Create WS for Order Line
         CreateDataRequest createMixedPayment = new CreateDataRequest();
-        createMixedPayment.setWebServiceType("nTierCreatePosPayment");
+        createMixedPayment.setWebServiceType(erpProperties.getProperty("wsCreatePosPayment"));
         DataRow data = new DataRow();
         data.addField("AD_Client_ID", "@C_Order.AD_Client_ID");
         data.addField("AD_Org_ID", "@C_Order.AD_Org_ID");
@@ -519,8 +532,7 @@ public class SyncOrderThread extends Thread {
 
     private void completeOrder(CompositeOperationRequest compositeOperation) {
         SetDocActionRequest createDocAction = new SetDocActionRequest();
-        createDocAction.setWebServiceType("nTierCompleteOrder");
-        createDocAction.setTableName("C_Order");
+        createDocAction.setWebServiceType(erpProperties.getProperty("wsCompleteOrder"));
         createDocAction.setRecordID(0);
         createDocAction.setRecordIDVariable("@C_Order.C_Order_ID");
         createDocAction.setDocAction(DocAction.Complete);
@@ -528,25 +540,12 @@ public class SyncOrderThread extends Thread {
         compositeOperation.addOperation(createDocAction);
     }
 
-    private int queryOrderRecordId(TicketInfo ticket) {
-        QueryDataRequest query = new QueryDataRequest();
-        query.setWebServiceType("nTierQueryOrderRecordId");
-        query.setLogin(orders.getLogin());
-        DataRow dataRow = new DataRow();
-        dataRow.addField("AD_Client_ID", orders.getAD_Client_ID());
-        dataRow.addField("AD_Org_ID", orders.getAD_Org_ID());
-        dataRow.addField("DocumentNo", Integer.toString(ticket.getTicketId()));
-        dataRow.addField("GrandTotal", Double.toString(round(ticket.getTotal(), 2)));
-        query.setDataRow(dataRow);
-        return (sendWsQueryRequest(query));
-    }
-
     private int queryBpRecordId(TicketInfo ticket) {
         QueryDataRequest query = new QueryDataRequest();
-        query.setWebServiceType("nTierQueryBP");
+        query.setWebServiceType(erpProperties.getProperty("wsQueryBP"));
         query.setLogin(orders.getLogin());
         DataRow dataRow = new DataRow();
-        dataRow.addField("AD_Client_ID", orders.getAD_Client_ID());
+        dataRow.addField("AD_Client_ID", erpProperties.getProperty("AD_Client_ID"));
         dataRow.addField("Name", "%" + ticket.getCustomer().getName() + "%");
         query.setDataRow(dataRow);
         return (sendWsQueryRequest(query));
@@ -560,193 +559,6 @@ public class SyncOrderThread extends Thread {
         BigDecimal bd = new BigDecimal(Double.toString(value));
         bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
-    }
-
-    private int transformTickets(List<TicketInfo> ticketlist, SyncOrder orders) {
-        String result;
-        int imported = 0;
-        int C_OrderType_ID = 0;
-
-        //System.out.println("Cantidad de ticket para enviar: " + ticketlist.size());
-        System.out.println("\n" + new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.qtyorders_sync")).getMessageMsg()
-                + ticketlist.size() + "\n");
-        for (int i = 0; i < ticketlist.size(); i++) {
-            if (null != this) {
-                try {
-                    TicketInfo ticket = ticketlist.get(i);
-
-                    OrderIdentifier orderid = new OrderIdentifier();
-                    orderid.setDocumentNo(Integer.toString(ticket.getTicketId()));
-
-                    Calendar datenew = Calendar.getInstance();
-                    datenew.setTime(ticket.getDate());
-                    orderid.setDateNew(datenew);
-
-                    if (ticket.getCustomerId() != null) {
-                        ticket.setCustomer(dlintegration.getTicketCustomer(ticket.getId()));
-                    }
-                    OrderLine[] orderLine = new OrderLine[ticket.getLines().size()];
-                    for (int j = 0; j < ticket.getLines().size(); j++) {
-                        TicketLineInfo line = ticket.getLines().get(j);
-                        int I_Order_ID = dlintegration.findI_Order_ID(ticket.getId(), line.getTicketLine());
-                        if (I_Order_ID != 0) {
-                            continue;
-                        }
-                        orderLine[j] = new OrderLine();
-                        orderLine[j].setOrderLineId(String.valueOf(line.getTicketLine()));// or simply "j"
-
-                        DataRow data = new DataRow();
-                        if (ticket.getTicketType() == 0) {
-
-                            C_OrderType_ID = orders.getC_DocType_ID(); //regular order
-                        } else {
-
-                            C_OrderType_ID = orders.getC_DocTypeRefund_ID(); //return
-                        }
-                        data.addField("C_DocType_ID", C_OrderType_ID);
-                        data.addField("AD_Client_ID", orders.getAD_Client_ID());
-                        data.addField("AD_Org_ID", orders.getAD_Org_ID());
-
-                        data.addField("M_Warehouse_ID", orders.getM_Warehouse_ID());
-
-                        data.addField("DocumentNo", Integer.toString(ticket.getTicketId()));
-                        data.addField("DateOrdered", new java.sql.Timestamp(datenew.getTime().getTime()).toString());
-                        data.addField("SalesRep_ID", Integer.valueOf(ticket.getUser().getId()));
-                        if (ticket.getCustomerId() != null) {
-                            data.addField("BPartnerValue", ticket.getCustomer().getSearchkey());
-
-                            //data.addField("TaxID", ticket.getCustomer().getTaxid());
-                            data.addField("Name", ticket.getCustomer().getName());
-                            if (ticket.getCustomer().getAddress() != null && !ticket.getCustomer().getAddress().equals("")) {
-                                data.addField("Address1", ticket.getCustomer().getAddress());
-                                data.addField("City", ticket.getCustomer().getCity());
-                            } else {
-                                data.addField("Address1", orders.getCityName());
-                                data.addField("City", orders.getCityName());
-                            }
-                        }
-                        if (line.getProductID() == null) {
-                            orderLine[j].setProductId("0");
-                            orderLine[j].setProductValue("0");
-                            data.addField("M_Product_ID", 0);
-                            data.addField("ProductValue", 0);
-                        } else {
-                            if (!line.getProductID().contains("-")) {
-                                orderLine[j].setProductId(line.getProductID());
-                                data.addField("M_Product_ID", line.getProductID());
-                            }
-                            ProductInfoExt productinfo = dlintegration.getProductInfo(line.getProductID());
-                            data.addField("ProductValue", productinfo.getReference());
-                        }
-
-                        orderLine[j].setUnits(line.getMultiply());
-                        orderLine[j].setPrice(line.getPrice());
-                        orderLine[j].setTaxId(line.getTaxInfo().getId());
-
-                        data.addField("QtyOrdered", Double.toString(Math.abs(line.getMultiply())));
-                        data.addField("PriceActual", Double.toString(line.getPrice()));
-                        data.addField("C_Tax_ID", line.getTaxInfo().getId());
-                        data.addField("TaxAmt", Double.toString(Math.abs(line.getTax())));
-
-                        //String paymentType = "POS Order";
-                        //Double creditnoteAmount = 0.0;
-                        /*if (ticket.getTotal() >= 0) {
-                            List<PaymentInfo> payments = ticket.getPayments();
-                            for (PaymentInfo payment : payments) {
-                                if (payment.getName().equals("debt")) {
-                                    paymentType = payment.getName();
-                                    creditnoteAmount = payment.getTotal();
-                                    break;
-                                }
-                            }
-                        } else {
-                            PaymentInfo payments = ticket.getPayments().get(0);
-                            paymentType = payments.getName();
-                            creditnoteAmount = payments.getTotal();
-                        }*/
-                        //data.addField("paymentType", paymentType);
-                        //writer.writeCharacters(paymentType);
-                        //writer.writeEndElement();
-                        //data.addField("creditnoteAmount", creditnoteAmount);
-                        /*writer.writeStartElement("creditnoteAmount");
-                                writer.writeCharacters(String.valueOf(creditnoteAmount));
-                                writer.writeEndElement();
-                         */
-                        //data.addField("paymentAmount", ticket.getTotal());
-                        /*writer.writeStartElement("paymentAmount");
-                                writer.writeCharacters(String.valueOf(ticket.getTotal()));
-                                writer.writeEndElement();*/
-                        //send fiscal information commented for standard
-                        /*
-                                writer.writeStartElement("fiscalprint_serial");
-                                writer.writeCharacters(ticket.getFiscalprint_serial());
-                                writer.writeEndElement();
-                                writer.writeStartElement("fiscal_invoicenumber");
-                                writer.writeCharacters(ticket.getFiscal_invoicenumber());
-                                writer.writeEndElement();
-                                writer.writeStartElement("fiscal_zreport");
-                                writer.writeCharacters(ticket.getFiscal_zreport());
-                                writer.writeEndElement();
-                         */
-                        //data.addField("OPOS_numberoflines", ticket.getLines().size());
-                        //data.addField("OPOS_line", line.getTicketLine());
-                        data.addField("C_Country_ID", orders.getAD_Country_ID());
-
-                        data.addField("C_Region_ID", orders.getAD_Region_ID());
-
-                        if (ticket.getCustomer().getPhone() != null) {
-                            data.addField("Phone", ticket.getCustomer().getPhone());
-                        } else {
-                            data.addField("Phone", "");
-                        }
-                        if (ticket.getCustomer().getEmail() != null) {
-                            data.addField("EMail", ticket.getCustomer().getEmail());
-                        } else {
-                            data.addField("EMail", "");
-                        }
-
-                        /*  data.addField("OPOS_numberoflines", ticket.getLines().size());
-                        
-                        data.addField("OPOS_line", line.getTicketLine());
-                        
-                        data.addField("fiscalNumber", dlfiscal.findFiscalNumber(ticket.getId(), ticket.getTicketType()));
-                        data.addField("FiscalPrintSerial", dlfiscal.findFiscalSerial(ticket.getId(), ticket.getTicketType()));                        
-                       yogan060520 */
-                        int recordid = orders.SendOrders(data);
-                        if (recordid != 0) {
-                            dlintegration.execTicketLineUpdate(ticket.getId(), line.getTicketLine(), recordid);
-                        }
-                    }
-                    //REVISO SI faltan lineas
-                    System.out.println(dlintegration.countExportedLines(ticket.getId()));
-                    System.out.println(ticket.getLinesCount());
-                    if (dlintegration.countExportedLines(ticket.getId()) == ticket.getLinesCount()) {
-                        System.out.println("*************Resultado*************");
-
-                        result = orders.processOrder(ticket.getTicketId(), C_OrderType_ID);
-                        System.out.println(result);
-                        if (result != null) {
-                            System.out.println("*************Orden Importada: " + ticket.getTicketId() + "*************");
-                            dlintegration.execTicketUpdate(ticket.getId(), "1");
-                            imported++;
-                        } else {
-                            System.out.println("*************Falló al procesar orden: " + ticket.getTicketId() + "*************");
-                            dlintegration.execTicketUpdate(ticket.getId(), "0");
-                        }
-                    } else {
-                        System.out.println("*************Aun Faltan Lineas: " + ticket.getTicketId() + "*************");
-                        dlintegration.execTicketUpdate(ticket.getId(), "0");
-
-                    }
-                    //PROCESAR ORDEN
-
-                } catch (BasicException ex) {
-                    Logger.getLogger(SyncOrderThread.class
-                            .getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        }
-        return imported;
     }
 
     private String getHostName() {
