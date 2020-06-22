@@ -73,6 +73,7 @@ import com.dalsemi.onewire.container.OneWireContainer;
 import com.dalsemi.onewire.utils.*;
 import com.dalsemi.onewire.application.monitor.*;
 import com.openbravo.pos.util.uOWWatch;
+import static java.net.InetAddress.getByName;
 
 /**
  *TicketInfo

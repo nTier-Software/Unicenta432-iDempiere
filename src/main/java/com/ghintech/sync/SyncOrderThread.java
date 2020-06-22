@@ -27,8 +27,6 @@ package com.ghintech.sync;
 
 import com.ghintech.fiscalprint.DataLogicFiscal;
 import com.openbravo.basic.BasicException;
-import com.ghintech.sync.externalsales.OrderIdentifier;
-import com.ghintech.sync.externalsales.OrderLine;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.DataLogicSystem;
@@ -44,7 +42,6 @@ import java.io.InputStream;
 import static java.lang.Thread.sleep;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -56,27 +53,15 @@ import org.idempiere.webservice.client.base.DataRow;
 import org.idempiere.webservice.client.base.Enums.DocAction;
 import org.idempiere.webservice.client.base.Enums.WebServiceResponseStatus;
 import org.idempiere.webservice.client.base.Field;
-import org.idempiere.webservice.client.base.ParamValues;
-import org.idempiere.webservice.client.base.WebServiceRequest;
-import org.idempiere.webservice.client.base.WebServiceResponse;
-import org.idempiere.webservice.client.exceptions.WebServiceException;
-import org.idempiere.webservice.client.exceptions.XMLWriteException;
 import org.idempiere.webservice.client.net.WebServiceConnection;
 import org.idempiere.webservice.client.request.CompositeOperationRequest;
 import org.idempiere.webservice.client.request.CreateDataRequest;
 import org.idempiere.webservice.client.request.CreateUpdateDataRequest;
 import org.idempiere.webservice.client.request.QueryDataRequest;
-import org.idempiere.webservice.client.request.RunProcessRequest;
 import org.idempiere.webservice.client.request.SetDocActionRequest;
 import org.idempiere.webservice.client.response.CompositeResponse;
-import org.idempiere.webservice.client.response.RunProcessResponse;
-import org.idempiere.webservice.client.response.StandardResponse;
 import org.idempiere.webservice.client.response.WindowTabDataResponse;
-
-/*import org.compiere.model.I_I_Order;
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.Session;
+import static java.lang.Thread.sleep;
 
 /**
  *
@@ -116,15 +101,7 @@ public class SyncOrderThread extends Thread {
         boolean sent = true;
         Double stopLoop;
         int c = 0;
-        /* try {
-            dlintegration.checkTickets();
-            if (erpProperties.getProperty("SentAllOrders").equals("Y")) {
-                dlintegration.checkTicketsFiscalNumber();
-            }
 
-        } catch (BasicException e) {
-
-        }*/
         while (true) {
             try {
 
@@ -144,24 +121,10 @@ public class SyncOrderThread extends Thread {
 
     }
 
-    public long converter(Double min) {
-        long millis = (long) (min * 60 * 1000);
-        return millis;
-    }
-
     public MessageInf exportToERP() throws BasicException {
-
-        //List<TicketInfo> ticketlistSync = dlintegration.getTicketsSync(hostname);
-        //if (ticketlistSync.size() > 0) {
-        //    dlintegration.resetTicketsSync(hostname);
-        //return new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.sendingorders"));
-        //}
-        //if there is no tickets in process update the list of tickets not sync
-        //dlintegration.setTicketsInProcess(hostname);
         List<TicketInfo> ticketlist = dlintegration.getTicketsToSync(hostname);
 
         if (ticketlist.isEmpty()) {
-            //dlintegration.execTicketUpdate();
             return new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.zeroorders"));
         } else {
             for (TicketInfo ticket : ticketlist) {
@@ -204,7 +167,7 @@ public class SyncOrderThread extends Thread {
 
             completeOrder(compositeOperation);
 
-            CompositeResponse response = sendRequest(compositeOperation);
+            CompositeResponse response = sendWsRequest(compositeOperation);
 
             if (response.getStatus() == WebServiceResponseStatus.Error) {
                 isOrdersSentOk = false;
@@ -219,12 +182,12 @@ public class SyncOrderThread extends Thread {
         try {
             if (response.getStatus() == WebServiceResponseStatus.Successful) {
                 System.out.println("\n" + "*************Order Imported: "
-                        + ticket.getTicketId() + "*************" + "\n");
+                        + ticket.getTicketId() + " *************" + "\n");
                 dlintegration.execTicketUpdate(ticket.getId(), "1");
 
             } else {
                 System.out.println("\n" + "*************Order Not Imported: "
-                        + ticket.getTicketId() + "*************" + "\n");
+                        + ticket.getTicketId() + " *************" + "\n");
                 dlintegration.execTicketUpdate(ticket.getId(), "0");
             }
         } catch (BasicException ex) {
@@ -232,7 +195,7 @@ public class SyncOrderThread extends Thread {
         }
     }
 
-    public CompositeResponse sendRequest(CompositeOperationRequest compositeOperation) {
+    public CompositeResponse sendWsRequest(CompositeOperationRequest compositeOperation) {
         // CREATE CLIENT
         WebServiceConnection client = orders.getClient();
         CompositeResponse response = null;
@@ -408,10 +371,6 @@ public class SyncOrderThread extends Thread {
         createUser(compositeOperation, ticket);
     }
 
-    public static boolean isBlankOrNull(String str) {
-        return (str == null || "".equals(str.trim()));
-    }
-
     private void createLocation(CompositeOperationRequest compositeOperation, TicketInfo ticket) {
         CreateUpdateDataRequest createLocation = new CreateUpdateDataRequest();
         createLocation.setWebServiceType(erpProperties.getProperty("wsCreateLocation"));
@@ -559,6 +518,15 @@ public class SyncOrderThread extends Thread {
         BigDecimal bd = new BigDecimal(Double.toString(value));
         bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
+    }
+
+    public static boolean isBlankOrNull(String str) {
+        return (str == null || "".equals(str.trim()));
+    }
+
+    public long converter(Double min) {
+        long millis = (long) (min * 60 * 1000);
+        return millis;
     }
 
     private String getHostName() {
