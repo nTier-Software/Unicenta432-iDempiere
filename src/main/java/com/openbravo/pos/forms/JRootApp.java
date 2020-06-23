@@ -72,6 +72,7 @@ import com.dalsemi.onewire.OneWireException;
 import com.dalsemi.onewire.container.OneWireContainer;
 import com.dalsemi.onewire.utils.*;
 import com.dalsemi.onewire.application.monitor.*;
+import com.ntier.webservices.orders.SyncOrders;
 import com.openbravo.pos.util.uOWWatch;
 import static java.net.InetAddress.getByName;
 
@@ -546,13 +547,13 @@ public class JRootApp extends JPanel implements AppView, DeviceMonitorEventListe
            /* SyncProductsThread syncProductsThread;
             SyncPeopleThread syncPeopleThread ;
             SyncCustomersThread syncCustomersThread; yn040520*/
-            SyncOrderThread syncOrderThread;
+            SyncOrders syncOrders;
          /*   SyncMovementThread syncMovementThread;
             SyncGiftCardThread syncGiftCardThread;
 	    //SyncCloseCashThread syncCloseCash; yn040520*/
             if(!m_dlSystem.getResourceAsProperties("erp.properties").isEmpty()){
-                syncOrderThread = new SyncOrderThread(this);
-                syncOrderThread.start();
+                syncOrders = new SyncOrders(this);
+                syncOrders.start();
             /*    syncProductsThread = new SyncProductsThread(this);
                 syncProductsThread.start();
                 syncPeopleThread = new SyncPeopleThread(this);
