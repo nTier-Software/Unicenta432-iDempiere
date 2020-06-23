@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>Sync configuration</comment>
+    <entry key="UrlBase">http://localhost:8080</entry>
+    <entry key="AD_Client_ID">11</entry>
+    <entry key="AD_Org_ID">11</entry>
+    <entry key="OrgValue">GardenWorld</entry>
+    <entry key="C_DocType_ID">135</entry>
+    <entry key="C_DocTypeRefund_ID">135</entry>
+    <entry key="C_DocTypeMovement_ID">143</entry>
+    <entry key="CityName">Panama</entry>
+    <entry key="AD_Role_ID">102</entry>
+    <entry key="M_Warehouse_ID">103</entry>
+    <entry key="Language">en_US</entry>
+    <entry key="UserName">GardenAdmin</entry>
+    <entry key="UserPass">GardenAdmin</entry>
+    <entry key="M_PriceList_Version_ID">102</entry>
+    <entry key="AD_Country_ID">100</entry>
+    <entry key="AD_Region_ID">142</entry>
+    <entry key="AD_City_ID">0</entry>
+    <entry key="wsProductType">Productos</entry>    
+    <entry key="wsCustomerType">Clientes</entry>
+    <entry key="wsPeopleType">Usuarios</entry>
+    <entry key="wsOrderType">nTierCreateOrder</entry>
+    <entry key="wsClosedcashType">ClosedCash</entry>
+    <entry key="WsMovementType">Movement</entry>
+    <entry key="wsImportOrderType">ProcessOrders</entry>
+    <entry key="wsImportOrderTypeInterval">60.0</entry>
+    <entry key="wsOrderTypeInterval">60.0</entry>    
+    <entry key="wsProductTypeInterval">60.0</entry>    
+    <entry key="wsCustomerTypeInterval">60.0</entry>    
+    <entry key="wsPeopleTypeInterval">60.0</entry>   
+    <entry key="wsClosedcashTypeInterval">60.0</entry>    
+    <entry key="wsMovementTypeInterval">60.0</entry>    
+    <entry key="wsCompositeOrderType">CompositeOrder</entry>    
+    <entry key="wsCurrentOrder">CurrentOrder</entry>
+    <entry key="wsImportMovementType">ImportMovements</entry>
+    <entry key="wsGiftCardType">GiftCard</entry>
+    <entry key="wsGiftCardWrite">GiftCardW</entry>
+    <entry key="wsGiftCardTypeInterval">60.0</entry>
+    <entry key="wsCurrentGiftCard">CurrentGiftCard</entry>
+    <entry key="SentAllOrders">N</entry>
+ </properties>
