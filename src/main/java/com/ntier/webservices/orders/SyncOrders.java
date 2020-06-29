@@ -22,7 +22,8 @@
 //    along with Openbravo POS.  If not, see <http://www.gnu.org/licenses/>.
 package com.ntier.webservices.orders;
 
-import com.ghintech.sync.*;
+//import com.ghintech.sync.*;
+import com.ntier.webservices.DataLogicIntegration;
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.pos.forms.AppLocal;
@@ -72,7 +73,7 @@ public class SyncOrders extends Thread {
     public SyncOrders(JRootApp rootApp) {
 
         app = rootApp;
-        dlintegration = (DataLogicIntegration) app.getBean("com.ghintech.sync.DataLogicIntegration");
+        dlintegration = (DataLogicIntegration) app.getBean("com.ntier.webservices.DataLogicIntegration");
         hostname = getHostName();
         dlsystem = (DataLogicSystem) app.getBean("com.openbravo.pos.forms.DataLogicSystem");
         erpProperties = dlsystem.getResourceAsProperties("erp.properties");
